@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERMINAL_B.R.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #050505;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    color: #c8b97a;
+    filter: brightness(0.9);
+  }
+
+  .crt-overlay {
+    position: fixed; inset: 0;
+    background:
+      linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
+      linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+    background-size: 100% 3px, 2px 100%;
+    z-index: 100; pointer-events: none;
+    animation: flicker 0.15s infinite;
+  }
+  @keyframes flicker { 0% { opacity: 0.97; } 100% { opacity: 1; } }
+
+  .vignette {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.97));
+    pointer-events: none; z-index: 90;
+  }
+
+  .scan-flash {
+    position: fixed; inset: 0;
+    background: linear-gradient(transparent 50%, rgba(200,185,122,0.015) 50%);
+    background-size: 100% 4px;
+    z-index: 80; pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+  .wrap {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column;
+    align-items: center;
+    gap: 0;
+    width: 90%;
+    max-width: 500px;
+  }
+
+  canvas {
+    display: block;
+    max-width: 100%;
+    /* blocca salvataggio */
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* shield sopra il canvas */
+  .shield {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    -webkit-touch-callout: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="scan-flash"></div>
+<div class="vignette"></div>
+
+<div class="wrap">
+  <div style="position:relative; display:inline-block;">
+    <canvas id="c"></canvas>
+    <div class="shield" id="shield"></div>
+  </div>
+</div>
+
+<script>
+  /* ══════════════════════════════
+     CAMBIA SOLO QUESTA RIGA
+     con il path della tua immagine
+  ══════════════════════════════ */
+  const IMAGE_SRC = "assets/Picsart_26-04-20_11-57-10-359.JPG.png";
+
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.src = IMAGE_SRC;
+
+  img.onload = () => {
+    // adatta il canvas alle dimensioni reali dell'immagine
+    canvas.width  = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.style.maxWidth  = '100%';
+    canvas.style.maxHeight = '90vh';
+
+    ctx.drawImage(img, 0, 0);
+
+    // filtro dorato — stesso di qr.html
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+      const inv  = 255 - gray;
+      data[i]   = Math.min(255, inv * 0.784); // R → #c8
+      data[i+1] = Math.min(255, inv * 0.725); // G → #b9
+      data[i+2] = Math.min(255, inv * 0.478); // B → #7a
+    }
+    ctx.putImageData(imageData, 0, 0);
+  };
+
+  // blocca context menu e long press
+  const shield = document.getElementById('shield');
+  ['contextmenu','dragstart','selectstart'].forEach(ev => {
+    shield.addEventListener(ev, e => e.preventDefault());
+  });
+  let t;
+  shield.addEventListener('touchstart', e => { t = setTimeout(() => e.preventDefault(), 300); }, { passive: false });
+  shield.addEventListener('touchend', () => clearTimeout(t));
+</script>
+
+</body>
+</html>
