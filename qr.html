@@ -166,7 +166,7 @@
   }
   .qr-piece.unlocked img {
     opacity: 1;
-    filter: grayscale(1) invert(1) sepia(1) hue-rotate(5deg) saturate(3) brightness(0.75) contrast(1.4);
+    filter: grayscale(0.2) sepia(0.15) brightness(0.85) contrast(1.1);
   }
 
   /* Glitch reveal animation */
@@ -185,7 +185,7 @@
     45%  { filter: brightness(1.5) sepia(1); opacity: 0.8; clip-path: inset(20% 0 0 0); }
     60%  { filter: brightness(0) invert(1); opacity: 0.9; clip-path: inset(10% 0 0 0); }
     80%  { filter: brightness(1.2); opacity: 1; clip-path: inset(0); }
-    100% { filter: grayscale(1) invert(1) sepia(1) hue-rotate(5deg) saturate(3) brightness(0.75) contrast(1.4); opacity: 1; clip-path: inset(0); }
+    100% { filter: grayscale(0.2) sepia(0.15) brightness(0.85) contrast(1.1); opacity: 1; clip-path: inset(0); }
   }
 
   @keyframes flashOut {
@@ -385,6 +385,80 @@
   }
 
   // 3. Sblocca un pezzo nell'UI (con o senza animazione)
+  function unlockPiece(n, animate) {
+    const el = document.querySelector(`.qr-piece[data-piece="${n}"]`);
+    if (!el || el.classList.contains('unlocked')) return;
+
+    if (animate) {
+      el.classList.add('revealing');
+      setTimeout(() => {
+        el.classList.remove('revealing');
+        el.classList.add('unlocked');
+      }, 850);
+    } else {
+      el.classList.add('unlocked');
+    }
+  }
+
+  // 4. Aggiorna barra progresso
+  function updateProgress(unlocked) {
+    const count = unlocked.length;
+    document.getElementById('progress-label').textContent = `${count}/4`;
+    setTimeout(() => {
+      document.getElementById('progress-fill').style.width = `${(count / 4) * 100}%`;
+    }, 300);
+
+    if (count >= 4) {
+      setTimeout(() => {
+        document.getElementById('complete-msg').style.display = 'block';
+        document.getElementById('status-msg').style.display = 'none';
+      }, 1200);
+    }
+  }
+
+  // 5. Main
+  window.addEventListener('load', () => {
+    const saved   = getSaved();
+    const newPiece = getPieceFromURL();
+
+    // Sblocca pezzi già salvati (senza animazione)
+    saved.forEach(n => unlockPiece(n, false));
+
+    // Nuovo pezzo dall'URL?
+    if (newPiece && !saved.includes(newPiece)) {
+      // Breve delay per effetto drammatico
+      setTimeout(() => {
+        unlockPiece(newPiece, true);  // con animazione glitch
+
+        // Salva
+        saved.push(newPiece);
+        save(saved);
+        updateProgress(saved);
+
+        // Messaggio
+        const msg = document.getElementById('status-msg');
+        msg.textContent = `>> ${PIECE_MESSAGES[newPiece]}`;
+        msg.className = 'status-msg new-unlock';
+
+      }, 800);
+
+    } else {
+      updateProgress(saved);
+      if (saved.length > 0 && saved.length < 4) {
+        document.getElementById('status-msg').textContent =
+          `>> ${saved.length} FRAGMENT${saved.length > 1 ? 'S' : ''} RECOVERED`;
+      }
+    }
+
+    // Pulisci ?piece dall'URL senza ricaricare la pagina
+    if (newPiece) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  });
+</script>
+
+</body>
+</html>a animazione)
   function unlockPiece(n, animate) {
     const el = document.querySelector(`.qr-piece[data-piece="${n}"]`);
     if (!el || el.classList.contains('unlocked')) return;
