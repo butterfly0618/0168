@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERMINAL_B.R.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #050505;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+  }
+
+  .crt-overlay {
+    position: fixed; inset: 0;
+    background:
+      linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
+      linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+    background-size: 100% 3px, 2px 100%;
+    z-index: 100; pointer-events: none;
+    animation: flicker 0.15s infinite;
+  }
+  @keyframes flicker { 0% { opacity: 0.97; } 100% { opacity: 1; } }
+
+  .vignette {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.98));
+    pointer-events: none; z-index: 90;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 12px;
+    height: 22px;
+    background: #c8b97a;
+    animation: blink 1s step-end infinite;
+    box-shadow: 0 0 10px rgba(200,185,122,0.5);
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="vignette"></div>
+
+<span class="cursor"></span>
+
+<script>
+  // Reindirizza a enigma1 dopo 3 secondi
+  setTimeout(() => {
+    window.location.href = "enigma1.html";
+  }, 3000);
+</script>
+
+</body>
+</html>
