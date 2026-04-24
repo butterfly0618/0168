@@ -84,8 +84,6 @@
     font-size: 13px; line-height: 2; color: #e8e0d0;
     letter-spacing: 0.5px;
     border-left: 1px solid var(--dim); padding-left: 16px;
-    opacity: 0;
-    animation: fadeIn 1.2s ease 0.6s forwards;
   }
 
   /* ── Image ── */
@@ -191,6 +189,19 @@
     animation: blink 1s step-end infinite;
   }
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── Decode chars ── */
+  .char { display: inline; color: var(--dim2); }
+  .char.decoded { color: #e8e0d0; }
+  .char.decoding {
+    color: var(--primary);
+    animation: glitchChar 0.12s steps(2) forwards;
+  }
+  @keyframes glitchChar {
+    0%   { opacity: 0.3; }
+    50%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
 </style>
 </head>
 <body>
@@ -210,14 +221,7 @@
 
   <div class="section-label">> INTERCEPTED_TRANSMISSION</div>
 
-  <div class="enigma-plain">
-    One step complete, the road is long,<br>
-    The path ahead is hard and wrong.<br>
-    Two numbers hide in plain sight here,<br>
-    only sharp minds will make them clear.<br>
-    Their product is the key you need,<br>
-    think outside the box to proceed.<span class="cursor"></span>
-  </div>
+  <div class="enigma-plain"></div>
 
   <!-- ── Image ── -->
   <div class="img-block">
@@ -344,6 +348,93 @@
   document.getElementById('ans').addEventListener('keydown', e => {
     if (e.key === 'Enter') check();
   });
+
+  // ── Decode animation ──
+  function startDecode(blockId, cipherText, plainText, initialDelay, charDelay) {
+    initialDelay = initialDelay || 1200;
+    charDelay = charDelay || 38;
+    const block = document.getElementById(blockId);
+    block.innerHTML = '';
+    for (let i = 0; i < cipherText.length; i++) {
+      if (cipherText[i] === '\n') {
+        block.appendChild(document.createElement('br'));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = cipherText[i];
+        span.dataset.plain = plainText[i] !== undefined ? plainText[i] : cipherText[i];
+        block.appendChild(span);
+      }
+    }
+    const spans = block.querySelectorAll('.char');
+    let i = 0;
+    function decodeNext() {
+      if (i >= spans.length) return;
+      const span = spans[i];
+      span.classList.add('decoding');
+      span.textContent = span.dataset.plain;
+      setTimeout(function() {
+        span.classList.remove('decoding');
+        span.classList.add('decoded');
+        i++;
+        decodeNext();
+      }, charDelay);
+    }
+    setTimeout(decodeNext, initialDelay);
+  }
+
+  
+
+
+  /* ── DECODE ANIMATION ── */
+  (function() {
+    const CHAR_DELAY = 65;
+    const cipher = "Rqh vwhs frpsohwh, wkh urdg lv orqj,\nWkh sdwk dkhdg lv kdug dqg zurqj.\nWzr qxpehuv klgh lq sodlq vljkw khuh,\nrqob vkdus plqgv zloo pdnh wkhp fohdu.\nWkhlu surgxfw lv wkh nhb brx qhhg,\nwklqn rxwvlgh wkh era wr surfhhg.";
+    const plain  = "One step complete, the road is long,\nThe path ahead is hard and wrong.\nTwo numbers hide in plain sight here,\nonly sharp minds will make them clear.\nTheir product is the key you need,\nthink outside the box to proceed.";
+    const block  = document.querySelector('.enigma-plain');
+    if (!block) return;
+
+    // Build spans from cipher text
+    block.innerHTML = '';
+    const spans = [];
+    for (let i = 0; i < cipher.length; i++) {
+      if (cipher[i] === '\n') {
+        block.appendChild(document.createElement('br'));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = cipher[i];
+        block.appendChild(span);
+        spans.push({ span, target: plain[i] || cipher[i], isLetter: /[a-zA-Z]/.test(cipher[i]) });
+      }
+    }
+
+    // Cursor
+    const cur = document.createElement('span');
+    cur.className = 'cursor';
+    block.appendChild(cur);
+
+    // Decode
+    let i = 0;
+    function decodeNext() {
+      while (i < spans.length && !spans[i].isLetter) {
+        spans[i].span.classList.add('decoded');
+        i++;
+      }
+      if (i >= spans.length) return;
+      const { span, target } = spans[i];
+      span.classList.add('decoding');
+      span.textContent = target;
+      setTimeout(() => {
+        span.classList.remove('decoding');
+        span.classList.add('decoded');
+        i++;
+        setTimeout(decodeNext, CHAR_DELAY);
+      }, CHAR_DELAY / 2);
+    }
+    setTimeout(decodeNext, 1000);
+  })();
+
 </script>
 
 </body>
