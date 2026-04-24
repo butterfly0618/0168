@@ -30,232 +30,177 @@
   }
 
   .crt-overlay {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background:
       linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
       linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
     background-size: 100% 3px, 2px 100%;
-    z-index: 100;
-    pointer-events: none;
+    z-index: 100; pointer-events: none;
     animation: flicker 0.15s infinite;
   }
   @keyframes flicker { 0% { opacity: 0.97; } 100% { opacity: 1; } }
 
   .vignette {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.95));
-    pointer-events: none;
-    z-index: 90;
+    pointer-events: none; z-index: 90;
   }
 
   .scan-flash {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background: linear-gradient(transparent 50%, rgba(200,185,122,0.015) 50%);
     background-size: 100% 4px;
-    z-index: 80;
-    pointer-events: none;
+    z-index: 80; pointer-events: none;
     animation: scanMove 8s linear infinite;
   }
   @keyframes scanMove { from { background-position: 0 0; } to { background-position: 0 100vh; } }
 
-  /* ── Wrap ── */
   .wrap {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: 90%;
-    max-width: 420px;
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; gap: 20px;
+    width: 90%; max-width: 420px;
     padding: 30px;
     border-left: 2px solid var(--dim);
   }
 
   .header {
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: var(--dim);
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--dim);
-    padding-bottom: 5px;
+    font-size: 10px; letter-spacing: 2px; color: var(--dim);
+    display: flex; justify-content: space-between;
+    border-bottom: 1px solid var(--dim); padding-bottom: 5px;
   }
 
-  .boot-msg {
-    font-size: 10px;
-    color: var(--dim2);
-    letter-spacing: 1px;
-  }
+  .boot-msg { font-size: 10px; color: var(--dim2); letter-spacing: 1px; }
 
-  .section-label {
-    font-size: 9px;
-    letter-spacing: 4px;
-    color: var(--dim2);
-    text-transform: uppercase;
-  }
+  .section-label { font-size: 9px; letter-spacing: 4px; color: var(--dim2); text-transform: uppercase; }
 
-  /* ── QR grid ── */
-  .qr-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 3px;
+  /* ── QR container ── */
+  .qr-container {
     width: 280px;
     height: 280px;
     margin: 0 auto;
     position: relative;
-  }
-
-  .qr-piece {
-    position: relative;
-    overflow: hidden;
-    background: #0a0a0a;
     border: 1px solid var(--dim);
+    overflow: hidden;
+    /* blocca interazione utente */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
 
-  /* Each piece shows a quadrant of the QR image */
-  .qr-piece img {
-    position: absolute;
-    width: 200%; /* 2x because it's half the image */
-    height: 200%;
-    object-fit: cover;
-    /* filter when locked */
-    filter: brightness(0) invert(0);
-    transition: filter 0.1s;
-    /* default: image hidden */
-    opacity: 0;
+  /* canvas occupa tutto il container — zero gap */
+  #qr-canvas {
+    display: block;
+    width: 280px;
+    height: 280px;
+    image-rendering: pixelated;
   }
 
-  /* piece 1 = top-left */
-  .qr-piece[data-piece="1"] img { top: 0;    left: 0;    }
-  /* piece 2 = top-right */
-  .qr-piece[data-piece="2"] img { top: 0;    left: -100%; }
-  /* piece 3 = bottom-left */
-  .qr-piece[data-piece="3"] img { top: -100%; left: 0;    }
-  /* piece 4 = bottom-right */
-  .qr-piece[data-piece="4"] img { top: -100%; left: -100%; }
-
-  /* Locked overlay */
-  .piece-lock {
+  /* overlay trasparente che cattura tutti gli eventi touch/mouse */
+  .qr-shield {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: repeating-linear-gradient(
-      45deg,
-      rgba(50,48,36,0.4),
-      rgba(50,48,36,0.4) 2px,
-      transparent 2px,
-      transparent 8px
-    );
-    border: 1px solid var(--dim);
-    transition: opacity 0.5s;
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--dim2);
+    z-index: 10;
+    -webkit-touch-callout: none;
   }
 
-  /* UNLOCKED state */
-  .qr-piece.unlocked .piece-lock {
-    opacity: 0;
+  /* griglia decorativa sopra il canvas — linee che separano i quadranti */
+  .qr-grid-lines {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
     pointer-events: none;
   }
-  .qr-piece.unlocked img {
-    opacity: 1;
-    filter: grayscale(0.2) sepia(0.15) brightness(0.85) contrast(1.1);
+  .qr-grid-lines::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: var(--bg);
+    opacity: 0;
+    transition: opacity 0.5s;
   }
+  .qr-grid-lines::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--bg);
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  /* mostra le linee di griglia solo se non tutto è sbloccato */
+  .qr-grid-lines.partial::before,
+  .qr-grid-lines.partial::after { opacity: 1; }
 
-  /* Glitch reveal animation */
-  .qr-piece.revealing img {
-    opacity: 1;
-    animation: glitchReveal 0.8s steps(1) forwards;
+  /* overlay locked per ogni quadrante */
+  .quad-lock {
+    position: absolute;
+    width: 50%; height: 50%;
+    z-index: 6;
+    display: flex; align-items: center; justify-content: center;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(5,5,5,0.92),
+      rgba(5,5,5,0.92) 2px,
+      rgba(50,48,36,0.3) 2px,
+      rgba(50,48,36,0.3) 8px
+    );
+    font-size: 8px; letter-spacing: 2px; color: var(--dim2);
+    transition: opacity 0.6s ease;
   }
-  .qr-piece.revealing .piece-lock {
-    animation: flashOut 0.8s steps(2) forwards;
-  }
+  .quad-lock[data-q="1"] { top: 0;   left: 0;   }
+  .quad-lock[data-q="2"] { top: 0;   left: 50%; }
+  .quad-lock[data-q="3"] { top: 50%; left: 0;   }
+  .quad-lock[data-q="4"] { top: 50%; left: 50%; }
+  .quad-lock.unlocked { opacity: 0; pointer-events: none; }
 
-  @keyframes glitchReveal {
-    0%   { filter: brightness(0) invert(1); opacity: 0.3; clip-path: inset(80% 0 0 0); }
-    15%  { filter: brightness(2) invert(0) hue-rotate(90deg); opacity: 0.7; clip-path: inset(60% 0 0 0); }
-    30%  { filter: brightness(0) invert(1); opacity: 0.5; clip-path: inset(40% 0 0 0); }
-    45%  { filter: brightness(1.5) sepia(1); opacity: 0.8; clip-path: inset(20% 0 0 0); }
-    60%  { filter: brightness(0) invert(1); opacity: 0.9; clip-path: inset(10% 0 0 0); }
-    80%  { filter: brightness(1.2); opacity: 1; clip-path: inset(0); }
-    100% { filter: grayscale(0.2) sepia(0.15) brightness(0.85) contrast(1.1); opacity: 1; clip-path: inset(0); }
-  }
-
-  @keyframes flashOut {
-    0%   { opacity: 1; }
-    50%  { opacity: 0.5; background: rgba(200,185,122,0.2); }
-    100% { opacity: 0; }
-  }
-
-  /* ── Progress bar ── */
+  /* progress */
   .progress-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 9px;
-    letter-spacing: 3px;
-    color: var(--dim2);
+    display: flex; align-items: center; gap: 10px;
+    font-size: 9px; letter-spacing: 3px; color: var(--dim2);
   }
-  .progress-bar {
-    flex: 1;
-    height: 2px;
-    background: var(--dim);
-    position: relative;
-    overflow: hidden;
-  }
+  .progress-bar { flex: 1; height: 2px; background: var(--dim); overflow: hidden; }
   .progress-fill {
-    height: 100%;
-    background: var(--primary);
-    width: 0%;
-    transition: width 1.2s ease;
-    box-shadow: 0 0 6px var(--primary);
+    height: 100%; background: var(--primary); width: 0%;
+    transition: width 1.2s ease; box-shadow: 0 0 6px var(--primary);
   }
 
-  /* ── Status message ── */
   .status-msg {
-    font-size: 10px;
-    color: var(--dim2);
-    letter-spacing: 1px;
-    min-height: 14px;
-    text-align: center;
+    font-size: 10px; color: var(--dim2); letter-spacing: 1px;
+    min-height: 14px; text-align: center;
   }
   .status-msg.new-unlock {
-    color: var(--primary);
-    text-shadow: 0 0 8px var(--glow);
+    color: var(--primary); text-shadow: 0 0 8px var(--glow);
     animation: pulseTxt 1s ease 3;
   }
-  @keyframes pulseTxt {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.3; }
-  }
+  @keyframes pulseTxt { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-  /* ── Complete state ── */
   .complete-msg {
-    display: none;
-    text-align: center;
-    font-size: 10px;
-    letter-spacing: 4px;
-    color: var(--primary);
-    text-transform: uppercase;
+    display: none; text-align: center;
+    font-size: 10px; letter-spacing: 4px;
+    color: var(--primary); text-transform: uppercase;
     text-shadow: 0 0 12px var(--glow);
     animation: pulseTxt 2s ease infinite;
   }
 
   .footer {
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--dim);
-    display: flex;
-    justify-content: space-between;
-    border-top: 1px solid var(--dim);
-    padding-top: 5px;
+    font-size: 9px; letter-spacing: 2px; color: var(--dim);
+    display: flex; justify-content: space-between;
+    border-top: 1px solid var(--dim); padding-top: 5px;
+  }
+
+  /* glitch flash per reveal */
+  @keyframes glitchFlash {
+    0%   { opacity: 0.2; }
+    25%  { opacity: 0.8; }
+    50%  { opacity: 0.1; }
+    75%  { opacity: 0.9; }
+    100% { opacity: 0; }
+  }
+  .quad-lock.revealing {
+    animation: glitchFlash 0.6s steps(2) forwards;
   }
 </style>
 </head>
@@ -273,45 +218,23 @@
   </div>
 
   <div class="boot-msg" id="boot-msg">DECRYPTING_FRAGMENT...</div>
+  <div class="section-label">> REBUILD THE SIGNAL</div>
 
-  <div class="section-label">> RICOSTRUISCI IL SEGNALE</div>
-
-  <!-- ── QR Grid ── -->
-  <div class="qr-grid">
-
-    <div class="qr-piece" data-piece="1">
-      <!--
-        SOSTITUISCI src con il tuo QR code.
-        Usa la STESSA immagine in tutti e 4 i pezzi.
-        Il CSS mostra automaticamente il quadrante corretto.
-      -->
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://example.com&color=c8b97a&bgcolor=050505" alt="" />
-      <div class="piece-lock">LOCKED</div>
-    </div>
-
-    <div class="qr-piece" data-piece="2">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://example.com&color=c8b97a&bgcolor=050505" alt="" />
-      <div class="piece-lock">LOCKED</div>
-    </div>
-
-    <div class="qr-piece" data-piece="3">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://example.com&color=c8b97a&bgcolor=050505" alt="" />
-      <div class="piece-lock">LOCKED</div>
-    </div>
-
-    <div class="qr-piece" data-piece="4">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://example.com&color=c8b97a&bgcolor=050505" alt="" />
-      <div class="piece-lock">LOCKED</div>
-    </div>
-
+  <!-- QR container: canvas + overlay locks + shield -->
+  <div class="qr-container" id="qr-container">
+    <canvas id="qr-canvas" width="280" height="280"></canvas>
+    <div class="qr-grid-lines partial" id="grid-lines"></div>
+    <div class="quad-lock" data-q="1">LOCKED</div>
+    <div class="quad-lock" data-q="2">LOCKED</div>
+    <div class="quad-lock" data-q="3">LOCKED</div>
+    <div class="quad-lock" data-q="4">LOCKED</div>
+    <!-- shield: blocca context menu e long-press su mobile -->
+    <div class="qr-shield" id="qr-shield"></div>
   </div>
 
-  <!-- Progress -->
   <div class="progress-row">
     <span id="progress-label">0/4</span>
-    <div class="progress-bar">
-      <div class="progress-fill" id="progress-fill"></div>
-    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
     <span>FRAGMENTS</span>
   </div>
 
@@ -319,97 +242,130 @@
   <div class="complete-msg" id="complete-msg">// SIGNAL RESTORED //</div>
 
   <div class="footer">
-    <span>KEY_ID: 0x0168FxKa9bNc</span>
+    <span>KEY_ID: 0x0168</span>
     <span id="node">NODE: --</span>
   </div>
 
 </div>
 
 <script>
-  /* ══════════════════════════════════════════
-     CONFIGURAZIONE
-     Modifica questi messaggi se vuoi
-  ══════════════════════════════════════════ */
   const PIECE_MESSAGES = {
     1: "FRAGMENT_1 DECRYPTED",
     2: "FRAGMENT_2 DECRYPTED",
     3: "FRAGMENT_3 DECRYPTED",
     4: "FRAGMENT_4 DECRYPTED — SIGNAL COMPLETE",
   };
+  const STORAGE_KEY = "br_qr_unlocked";
+  const QR_SRC = "assets/finalsolution.png";
 
-  const STORAGE_KEY = "br_qr_unlocked";   // chiave localStorage
-
-  /* ══════════════════════════════════════════
-     INIT
-  ══════════════════════════════════════════ */
+  // ── Clock ──
   function updateClock() {
     document.getElementById('clock').textContent =
-      new Date().toLocaleTimeString('it-IT', { hour12: false });
+      new Date().toLocaleTimeString('en-GB', { hour12: false });
   }
-  setInterval(updateClock, 1000);
-  updateClock();
+  setInterval(updateClock, 1000); updateClock();
 
-  const logs = [
-    "DECRYPTING_FRAGMENT...", "SIGNAL_PARTIAL...",
-    "REASSEMBLING_MATRIX...", "BREACH_PROTOCOL_ACTIVE",
-    "LISTENING...", "DATA_FRAGMENT_RECOVERED"
-  ];
-  setInterval(() => {
-    if (Math.random() > 0.75)
-      document.getElementById('boot-msg').textContent =
-        logs[Math.floor(Math.random() * logs.length)];
-  }, 3000);
+  const logs = ["DECRYPTING_FRAGMENT...", "SIGNAL_PARTIAL...", "REASSEMBLING_MATRIX...", "LISTENING...", "DATA_FRAGMENT_RECOVERED"];
+  setInterval(() => { if (Math.random() > 0.75) document.getElementById('boot-msg').textContent = logs[Math.floor(Math.random()*logs.length)]; }, 3000);
+  document.getElementById('node').textContent = 'NODE: ' + Math.random().toString(16).slice(2,8).toUpperCase();
 
-  document.getElementById('node').textContent =
-    'NODE: ' + Math.random().toString(16).slice(2,8).toUpperCase();
+  // ── Blocca context menu e long-press ──
+  const shield = document.getElementById('qr-shield');
+  const container = document.getElementById('qr-container');
+  ['contextmenu','dragstart','selectstart'].forEach(ev => {
+    container.addEventListener(ev, e => e.preventDefault());
+    shield.addEventListener(ev, e => e.preventDefault());
+  });
+  // Long press mobile
+  let pressTimer;
+  shield.addEventListener('touchstart', e => { pressTimer = setTimeout(() => e.preventDefault(), 300); }, { passive: false });
+  shield.addEventListener('touchend', () => clearTimeout(pressTimer));
 
-  /* ══════════════════════════════════════════
-     LOGICA PEZZI
-  ══════════════════════════════════════════ */
+  // ── Carica immagine e disegna su canvas ──
+  const canvas = document.getElementById('qr-canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = QR_SRC;
 
-  // 1. Leggi pezzi già sbloccati da localStorage
+  // Stato pezzi sbloccati
+  let unlockedPieces = [];
+
+  img.onload = () => {
+    drawCanvas(unlockedPieces);
+  };
+
+  function drawCanvas(unlocked) {
+    const W = 280, H = 280;
+    ctx.clearRect(0, 0, W, H);
+
+    // Sfondo nero
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, W, H);
+
+    // Mappa quadrante → pezzo
+    // q1=top-left, q2=top-right, q3=bottom-left, q4=bottom-right
+    const quadrants = [
+      { piece: 1, sx: 0,   sy: 0,   sw: W/2, sh: H/2, dx: 0,   dy: 0   },
+      { piece: 2, sx: W/2, sy: 0,   sw: W/2, sh: H/2, dx: W/2, dy: 0   },
+      { piece: 3, sx: 0,   sy: H/2, sw: W/2, sh: H/2, dx: 0,   dy: H/2 },
+      { piece: 4, sx: W/2, sy: H/2, sw: W/2, sh: H/2, dx: W/2, dy: H/2 },
+    ];
+
+    quadrants.forEach(q => {
+      if (unlocked.includes(q.piece)) {
+        // Disegna il quadrante
+        ctx.save();
+        ctx.drawImage(img, q.sx, q.sy, q.sw, q.sh, q.dx, q.dy, q.sw, q.sh);
+
+        // Applica filtro dorato: grayscale + tinta gold
+        const imageData = ctx.getImageData(q.dx, q.dy, q.sw, q.sh);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const gray = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+          const inv = 255 - gray;
+          // tinta #c8b97a sui pixel chiari (moduli del QR)
+          data[i]   = Math.min(255, inv * 0.784); // R
+          data[i+1] = Math.min(255, inv * 0.725); // G
+          data[i+2] = Math.min(255, inv * 0.478); // B
+        }
+        ctx.putImageData(imageData, q.dx, q.dy);
+        ctx.restore();
+      }
+    });
+  }
+
+  // ── Storage ──
   function getSaved() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
   }
+  function save(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
 
-  function save(unlocked) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(unlocked));
-  }
-
-  // 2. Leggi ?piece=N dall'URL
   function getPieceFromURL() {
     const p = new URLSearchParams(window.location.search).get('piece');
     const n = parseInt(p);
     return (n >= 1 && n <= 4) ? n : null;
   }
 
-  // 3. Sblocca un pezzo nell'UI (con o senza animazione)
-  function unlockPiece(n, animate) {
-    const el = document.querySelector(`.qr-piece[data-piece="${n}"]`);
-    if (!el || el.classList.contains('unlocked')) return;
-
+  // ── Sblocca quadrante ──
+  function unlockQuad(n, animate) {
+    const lock = document.querySelector(`.quad-lock[data-q="${n}"]`);
+    if (!lock || lock.classList.contains('unlocked')) return;
     if (animate) {
-      el.classList.add('revealing');
-      setTimeout(() => {
-        el.classList.remove('revealing');
-        el.classList.add('unlocked');
-      }, 850);
+      lock.classList.add('revealing');
+      setTimeout(() => { lock.classList.remove('revealing'); lock.classList.add('unlocked'); drawCanvas(unlockedPieces); }, 650);
     } else {
-      el.classList.add('unlocked');
+      lock.classList.add('unlocked');
     }
   }
 
-  // 4. Aggiorna barra progresso
+  // ── Progress ──
   function updateProgress(unlocked) {
     const count = unlocked.length;
     document.getElementById('progress-label').textContent = `${count}/4`;
-    setTimeout(() => {
-      document.getElementById('progress-fill').style.width = `${(count / 4) * 100}%`;
-    }, 300);
-
+    setTimeout(() => { document.getElementById('progress-fill').style.width = `${(count/4)*100}%`; }, 300);
     if (count >= 4) {
+      document.getElementById('grid-lines').classList.remove('partial');
       setTimeout(() => {
         document.getElementById('complete-msg').style.display = 'block';
         document.getElementById('status-msg').style.display = 'none';
@@ -417,44 +373,33 @@
     }
   }
 
-  // 5. Main
+  // ── Main ──
   window.addEventListener('load', () => {
-    const saved   = getSaved();
+    unlockedPieces = getSaved();
     const newPiece = getPieceFromURL();
 
-    // Sblocca pezzi già salvati (senza animazione)
-    saved.forEach(n => unlockPiece(n, false));
+    // Pezzi già salvati
+    unlockedPieces.forEach(n => unlockQuad(n, false));
+    // Ridisegna canvas con pezzi salvati (se img già caricata)
+    if (img.complete) drawCanvas(unlockedPieces);
 
-    // Nuovo pezzo dall'URL?
-    if (newPiece && !saved.includes(newPiece)) {
-      // Breve delay per effetto drammatico
+    if (newPiece && !unlockedPieces.includes(newPiece)) {
       setTimeout(() => {
-        unlockPiece(newPiece, true);  // con animazione glitch
-
-        // Salva
-        saved.push(newPiece);
-        save(saved);
-        updateProgress(saved);
-
-        // Messaggio
+        unlockedPieces.push(newPiece);
+        save(unlockedPieces);
+        unlockQuad(newPiece, true);
+        updateProgress(unlockedPieces);
         const msg = document.getElementById('status-msg');
         msg.textContent = `>> ${PIECE_MESSAGES[newPiece]}`;
         msg.className = 'status-msg new-unlock';
-
       }, 800);
-
     } else {
-      updateProgress(saved);
-      if (saved.length > 0 && saved.length < 4) {
-        document.getElementById('status-msg').textContent =
-          `>> ${saved.length} FRAGMENT${saved.length > 1 ? 'S' : ''} RECOVERED`;
-      }
+      updateProgress(unlockedPieces);
+      if (unlockedPieces.length > 0 && unlockedPieces.length < 4)
+        document.getElementById('status-msg').textContent = `>> ${unlockedPieces.length} FRAGMENT${unlockedPieces.length > 1 ? 'S' : ''} RECOVERED`;
     }
 
-    // Pulisci ?piece dall'URL senza ricaricare la pagina
-    if (newPiece) {
-      window.history.replaceState({}, '', window.location.pathname);
-    }
+    if (newPiece) window.history.replaceState({}, '', window.location.pathname);
   });
 </script>
 
