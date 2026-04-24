@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERMINAL_B.R.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --primary: #c8b97a;
+    --dim: #333024;
+    --dim2: #4a4530;
+    --bg: #050505;
+    --glow: rgba(200, 185, 122, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    color: var(--primary);
+    filter: brightness(0.9);
+  }
+
+  .crt-overlay {
+    position: fixed; inset: 0;
+    background:
+      linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
+      linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+    background-size: 100% 3px, 2px 100%;
+    z-index: 100; pointer-events: none;
+    animation: flicker 0.15s infinite;
+  }
+  @keyframes flicker { 0% { opacity: 0.97; } 100% { opacity: 1; } }
+
+  .vignette {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.95));
+    pointer-events: none; z-index: 90;
+  }
+
+  .scan-flash {
+    position: fixed; inset: 0;
+    background: linear-gradient(transparent 50%, rgba(200,185,122,0.015) 50%);
+    background-size: 100% 4px;
+    z-index: 80; pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+  .wrap {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; gap: 28px;
+    width: 90%; max-width: 540px;
+    padding: 30px;
+    border-left: 2px solid var(--dim);
+  }
+
+  .header {
+    font-size: 10px; letter-spacing: 2px; color: var(--dim);
+    display: flex; justify-content: space-between;
+    border-bottom: 1px solid var(--dim); padding-bottom: 5px;
+  }
+
+  .boot-msg { font-size: 10px; color: var(--dim2); letter-spacing: 1px; }
+
+  .section-label { font-size: 9px; letter-spacing: 4px; color: var(--dim2); text-transform: uppercase; }
+
+  /* ── Decode text ── */
+  .decode-block {
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    line-height: 2.2;
+    letter-spacing: 1px;
+    border-left: 1px solid var(--dim);
+    padding-left: 16px;
+    min-height: 120px;
+  }
+
+  /* ogni carattere è uno span — colore cambia quando decodificato */
+  .char {
+    display: inline;
+    color: var(--dim2);
+    transition: color 0.15s;
+  }
+  .char.decoded {
+    color: #e8e0d0;
+  }
+  /* glitch durante la decodifica */
+  .char.decoding {
+    color: var(--primary);
+    animation: glitchChar 0.12s steps(2) forwards;
+  }
+  @keyframes glitchChar {
+    0%   { opacity: 0.3; }
+    50%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  /* ── Signature ── */
+  .signature {
+    font-family: 'Fira Code', monospace;
+    font-size: 13px; letter-spacing: 6px;
+    color: var(--primary);
+    border-top: 1px solid var(--dim);
+    padding-top: 12px;
+    opacity: 0;
+  }
+
+  .qr-link {
+    font-size: 9px; letter-spacing: 3px; color: var(--dim2);
+    text-align: right; cursor: crosshair; text-decoration: none;
+    transition: color 0.3s; opacity: 0;
+  }
+  .qr-link:hover { color: var(--primary); }
+
+  .footer {
+    font-size: 9px; letter-spacing: 2px; color: var(--dim);
+    display: flex; justify-content: space-between;
+    border-top: 1px solid var(--dim); padding-top: 5px;
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="scan-flash"></div>
+<div class="vignette"></div>
+
+<div class="wrap">
+
+  <div class="header">
+    <span>FILE_ID: TERMINAL_END</span>
+    <span id="clock">--:--:--</span>
+  </div>
+
+  <div class="boot-msg" id="boot-msg">DECRYPTING_FINAL_MESSAGE...</div>
+  <div class="section-label">> FINAL_TRANSMISSION</div>
+
+  <!-- testo decodificato qui dal JS -->
+  <div class="decode-block" id="decode-block"></div>
+
+  <div class="signature" id="signature">0168</div>
+
+  <a class="qr-link" id="qr-link" href="qr.html">[ VIEW_SIGNAL_PROGRESS ]</a>
+
+  <div class="footer" id="footer">
+    <span>KEY_ID: 0x0168</span>
+    <span id="node">NODE: --</span>
+  </div>
+
+</div>
+
+<script>
+  // ── Clock ──
+  function updateClock() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('en-GB', { hour12: false });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  document.getElementById('node').textContent =
+    'NODE: ' + Math.random().toString(16).slice(2,8).toUpperCase();
+
+  const logs = ["DECRYPTING_FINAL_MESSAGE...", "SIGNAL_COMPLETE...", "DECODE_LAYER_FINAL... OK", "TRANSMISSION_END"];
+  setInterval(() => {
+    if (Math.random() > 0.8)
+      document.getElementById('boot-msg').textContent =
+        logs[Math.floor(Math.random() * logs.length)];
+  }, 3000);
+
+  // ── Testo ──
+  // cipherText = testo cifrato ROT-3 mostrato inizialmente
+  // plainText  = testo finale decodificato
+  const cipherText = "Wklv lv wkh hqg ri brxu mrxuqhb.\nYhub jrrg.\nBrx qrz kdyh hyhubwklqj brx qhhg wr mrlq xv.\nJrrgebh";
+  const plainText  = "This is the end of your journey.\nVery good.\nYou now have everything you need to join us.\nGoodbye";
+
+  const block = document.getElementById('decode-block');
+
+  // Costruisci gli span iniziali con il testo cifrato
+  function buildSpans() {
+    block.innerHTML = '';
+    for (let i = 0; i < cipherText.length; i++) {
+      if (cipherText[i] === '\n') {
+        block.appendChild(document.createElement('br'));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = cipherText[i];
+        span.dataset.index = i;
+        block.appendChild(span);
+      }
+    }
+  }
+
+  // Decodifica carattere per carattere
+  function decodeSequence() {
+    const spans = block.querySelectorAll('.char');
+    let i = 0;
+    // delay iniziale prima di partire
+    const CHAR_DELAY = 38; // ms tra un carattere e il successivo
+
+    function decodeNext() {
+      if (i >= spans.length) {
+        // Tutto decodificato — mostra firma e footer
+        setTimeout(() => {
+          document.getElementById('signature').style.animation = 'fadeIn 1.5s ease forwards';
+          document.getElementById('qr-link').style.animation = 'fadeIn 1.5s ease 0.5s forwards';
+          document.getElementById('footer').style.animation = 'fadeIn 1.5s ease 0.8s forwards';
+        }, 400);
+        return;
+      }
+
+      const span = spans[i];
+      const idx = parseInt(span.dataset.index);
+      const target = plainText[idx] !== undefined ? plainText[idx] : span.textContent;
+
+      // Fase glitch
+      span.classList.add('decoding');
+      span.textContent = target;
+
+      setTimeout(() => {
+        span.classList.remove('decoding');
+        span.classList.add('decoded');
+        i++;
+        decodeNext();
+      }, CHAR_DELAY);
+    }
+
+    // Piccolo delay iniziale per atmosfera
+    setTimeout(decodeNext, 1200);
+  }
+
+  // ── Avvia ──
+  buildSpans();
+  decodeSequence();
+</script>
+
+</body>
+</html>
