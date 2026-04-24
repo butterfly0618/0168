@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERMINAL_B.R.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --primary: #c8b97a;
+    --dim: #333024;
+    --dim2: #4a4530;
+    --bg: #050505;
+    --glow: rgba(200, 185, 122, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    color: var(--primary);
+    filter: brightness(0.9);
+  }
+
+  .crt-overlay {
+    position: fixed;
+    inset: 0;
+    background:
+      linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
+      linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+    background-size: 100% 3px, 2px 100%;
+    z-index: 100;
+    pointer-events: none;
+    animation: flicker 0.15s infinite;
+  }
+  @keyframes flicker { 0% { opacity: 0.97; } 100% { opacity: 1; } }
+
+  .vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.95));
+    pointer-events: none;
+    z-index: 90;
+  }
+
+  .scan-flash {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(transparent 50%, rgba(200,185,122,0.015) 50%);
+    background-size: 100% 4px;
+    z-index: 80;
+    pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+  .wrap {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 90%;
+    max-width: 540px;
+    padding: 30px;
+    border-left: 2px solid var(--dim);
+    max-height: 96vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .wrap::-webkit-scrollbar { display: none; }
+
+  .header {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--dim);
+    padding-bottom: 5px;
+  }
+
+  .boot-msg {
+    font-size: 10px;
+    color: var(--dim2);
+    letter-spacing: 1px;
+  }
+
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--dim2);
+    text-transform: uppercase;
+  }
+
+  /* ── Enigma text block ── */
+  .enigma-block {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    opacity: 0;
+    animation: fadeIn 1.2s ease 0.6s forwards;
+  }
+
+  .enigma-plain {
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 2;
+    color: #e8e0d0;
+    letter-spacing: 0.5px;
+    border-left: 1px solid var(--dim);
+    padding-left: 16px;
+  }
+
+  /* The cipher line — subtly different color */
+  .enigma-cipher {
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--primary);
+    letter-spacing: 2px;
+    border-left: 1px solid var(--dim2);
+    padding-left: 16px;
+    opacity: 0.75;
+  }
+
+  /* The number sequence */
+  .enigma-numbers {
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--dim2);
+    padding-left: 16px;
+    border-left: 1px solid var(--dim);
+  }
+
+  .sep {
+    border: none;
+    border-top: 1px solid var(--dim);
+    opacity: 0.4;
+  }
+
+  /* ── Input area ── */
+  .input-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    animation: fadeIn 1s ease 1.4s forwards;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.4);
+  }
+
+  .prefix {
+    padding-right: 15px;
+    color: var(--primary);
+    font-size: 18px;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  input[type="text"] {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e8e0d0;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+  }
+
+  button {
+    background: transparent;
+    border: 1px solid var(--dim);
+    color: var(--dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    padding: 10px;
+    cursor: crosshair;
+    transition: all 0.5s;
+  }
+  button:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 10px var(--glow);
+  }
+
+  .status-msg {
+    font-size: 10px;
+    height: 14px;
+    color: var(--dim);
+  }
+
+  /* ── QR link ── */
+  .qr-link {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--dim2);
+    text-align: right;
+    cursor: crosshair;
+    text-decoration: none;
+    transition: color 0.3s;
+    opacity: 0;
+    animation: fadeIn 1s ease 2s forwards;
+  }
+  .qr-link:hover { color: var(--primary); }
+
+  /* ── Footer ── */
+  .footer {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--dim);
+    padding-top: 5px;
+    opacity: 0;
+    animation: fadeIn 1s ease 2s forwards;
+  }
+
+  /* ── Success screen ── */
+  .success-screen {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  #typewriter {
+    font-size: 18px;
+    letter-spacing: 8px;
+    color: var(--primary);
+    text-transform: uppercase;
+    text-shadow: 0 0 15px var(--primary);
+  }
+
+  #piece-notice {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--dim2);
+    opacity: 0;
+    transition: opacity 1s ease 1s;
+  }
+  #piece-notice.visible { opacity: 1; }
+
+  .glitch-flash { animation: flash 0.2s steps(2) infinite; }
+  @keyframes flash { 0% { background: var(--primary); opacity: 0.1; } 100% { background: transparent; } }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 13px;
+    background: var(--primary);
+    vertical-align: middle;
+    margin-left: 4px;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="scan-flash"></div>
+<div class="vignette"></div>
+
+<div class="wrap" id="main-ui">
+
+  <div class="header">
+    <span>FILE_ID: PUZZLE_01</span>
+    <span id="clock">--:--:--</span>
+  </div>
+
+  <div class="boot-msg" id="boot-msg">SIGNAL_ACQUIRED...</div>
+
+  <div class="section-label">> INTERCEPTED_TRANSMISSION</div>
+
+  <!-- ── Enigma content ── -->
+  <div class="enigma-block">
+
+    <div class="enigma-plain">
+      One blink.<br>
+      One blink and you wouldn't be reading this.<br>
+      You kept your eyes open.<br>
+      Now keep your mind open too.<br>
+      The Truth is already here.<br>
+      You just haven't seen it yet.<span class="cursor"></span>
+    </div>
+
+    <div class="enigma-cipher">
+      WKH DQVZHU KDV DOZDBV EHHQ LQ IURQW RI BRX.<br>
+      ORRN DJDLQ.
+    </div>
+
+    <div class="enigma-numbers">
+      19 &nbsp; 14 &nbsp; 23 &nbsp; 5 &nbsp; 38
+    </div>
+
+  </div>
+
+  <hr class="sep">
+
+  <!-- ── Input ── -->
+  <div class="input-area">
+    <div class="input-row">
+      <span class="prefix">></span>
+      <input type="text" id="ans" placeholder="PASS" autocomplete="off" spellcheck="false" />
+    </div>
+    <button onclick="check()">VALIDATE_IDENTITY</button>
+  </div>
+
+  <div class="status-msg" id="msg"></div>
+
+  <!-- Link alla pagina QR -->
+  <a class="qr-link" href="qr.html">[ VIEW_SIGNAL_PROGRESS ]</a>
+
+  <div class="footer">
+    <span>KEY_ID: 0x0168</span>
+    <span id="node">NODE: --</span>
+  </div>
+
+</div>
+
+<!-- Success screen -->
+<div class="success-screen" id="success">
+  <div id="typewriter"></div>
+  <div id="piece-notice">// FRAGMENT_01 SAVED //</div>
+</div>
+
+<script>
+  /* ── Config ── */
+  const PIECE_NUMBER  = 1;
+  const SOLUTION_HASH = "3b5c470a7075cb192808d514a2bb1e2b5a6e0bcbfec0b9569fc6e153c99f7877";
+  const NEXT_URL      = "enigma2.html";
+  const SUCCESS_TEXT  = "very good.";
+  const REDIRECT_DELAY = 5000;
+  const STORAGE_KEY   = "br_qr_unlocked";
+
+  /* ── Clock ── */
+  function updateClock() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('en-GB', { hour12: false });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  /* ── Boot log ── */
+  const logs = [
+    "SIGNAL_ACQUIRED...", "DECRYPT_X64_CORE... OK",
+    "WARNING: VOID_LOG_DETECTED", "LISTENING...",
+    "ENCRYPT_LINK_ESTABLISHED", "DATA_FRAGMENT_RECOVERED"
+  ];
+  setInterval(() => {
+    if (Math.random() > 0.8)
+      document.getElementById('boot-msg').textContent =
+        logs[Math.floor(Math.random() * logs.length)];
+  }, 3000);
+
+  document.getElementById('node').textContent =
+    'NODE: ' + Math.random().toString(16).slice(2,8).toUpperCase();
+
+  /* ── SHA-256 ── */
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+  }
+
+  /* ── Typewriter ── */
+  function typeWriter(text, id, speed = 200) {
+    let i = 0;
+    const el = document.getElementById(id);
+    function type() {
+      if (i < text.length) { el.textContent += text.charAt(i); i++; setTimeout(type, speed); }
+    }
+    type();
+  }
+
+  /* ── Save piece ── */
+  function unlockPiece(n) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      if (!saved.includes(n)) { saved.push(n); localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); }
+    } catch(e) {}
+  }
+
+  /* ── Check ── */
+  async function check() {
+    const val  = document.getElementById('ans').value.trim().toUpperCase();
+    const msg  = document.getElementById('msg');
+    const hash = await sha256(val);
+
+    if (hash === SOLUTION_HASH) {
+      unlockPiece(PIECE_NUMBER);
+      document.body.classList.add('glitch-flash');
+
+      setTimeout(() => {
+        document.getElementById('main-ui').style.display = 'none';
+        document.getElementById('success').style.display = 'flex';
+        document.body.classList.remove('glitch-flash');
+
+        setTimeout(() => {
+          typeWriter(SUCCESS_TEXT, "typewriter", 250);
+          setTimeout(() => document.getElementById('piece-notice').classList.add('visible'), 1000);
+          setTimeout(() => { window.location.href = NEXT_URL; }, REDIRECT_DELAY);
+        }, 500);
+      }, 500);
+
+    } else {
+      document.getElementById('ans').value = '';
+      msg.style.color = '#5e1111';
+      msg.textContent = '>> ERROR: UNAUTHORIZED_BREACH_DETECTED';
+      setTimeout(() => { msg.textContent = ''; }, 2000);
+    }
+  }
+
+  document.getElementById('ans').addEventListener('keydown', e => {
+    if (e.key === 'Enter') check();
+  });
+</script>
+
+</body>
+</html>
