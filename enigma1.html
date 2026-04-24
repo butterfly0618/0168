@@ -15,7 +15,7 @@
     --glow: rgba(200, 185, 122, 0.15);
   }
 
-  * { margin: 0; padding: 0; box-sizing: -box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
     background: var(--bg);
@@ -280,6 +280,19 @@
     animation: blink 1s step-end infinite;
   }
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── Decode chars ── */
+  .char { display: inline; color: var(--dim2); }
+  .char.decoded { color: #e8e0d0; }
+  .char.decoding {
+    color: var(--primary);
+    animation: glitchChar 0.12s steps(2) forwards;
+  }
+  @keyframes glitchChar {
+    0%   { opacity: 0.3; }
+    50%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
 </style>
 </head>
 <body>
@@ -302,14 +315,7 @@
   <!-- ── Enigma content ── -->
   <div class="enigma-block">
 
-    <div class="enigma-plain">
-      One blink.<br>
-      One blink and you wouldn't be reading this.<br>
-      You kept your eyes open.<br>
-      Now keep your mind open too.<br>
-      The Truth is already here.<br>
-      You just haven't seen it yet.<span class="cursor"></span>
-    </div>
+    <div class="enigma-plain"></div>
 
     <div class="enigma-cipher">
       WKH DQVZHU KDV DOZDBV EHHQ LQ IURQW RI BRX.<br>
@@ -336,6 +342,13 @@
   <div class="status-msg" id="msg"></div>
 
   <!-- Link alla pagina QR -->
+  <!-- ── Signature ── -->
+  <div style="font-family:'Fira Code',monospace; font-size:10px; letter-spacing:2px; color:var(--dim2); border-top: 1px solid var(--dim); padding-top:12px; line-height:1.8; opacity:0; animation: fadeIn 1s ease 2s forwards;">
+    
+    <div style="color:var(--primary);font-size:13px;letter-spacing:6px;">0168</div>
+    
+  </div>
+
   <a class="qr-link" href="qr.html">[ VIEW_SIGNAL_PROGRESS ]</a>
 
   <div class="footer">
@@ -440,6 +453,93 @@
   document.getElementById('ans').addEventListener('keydown', e => {
     if (e.key === 'Enter') check();
   });
+
+  // ── Decode animation ──
+  function startDecode(blockId, cipherText, plainText, initialDelay, charDelay) {
+    initialDelay = initialDelay || 1200;
+    charDelay = charDelay || 38;
+    const block = document.getElementById(blockId);
+    block.innerHTML = '';
+    for (let i = 0; i < cipherText.length; i++) {
+      if (cipherText[i] === '\n') {
+        block.appendChild(document.createElement('br'));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = cipherText[i];
+        span.dataset.plain = plainText[i] !== undefined ? plainText[i] : cipherText[i];
+        block.appendChild(span);
+      }
+    }
+    const spans = block.querySelectorAll('.char');
+    let i = 0;
+    function decodeNext() {
+      if (i >= spans.length) return;
+      const span = spans[i];
+      span.classList.add('decoding');
+      span.textContent = span.dataset.plain;
+      setTimeout(function() {
+        span.classList.remove('decoding');
+        span.classList.add('decoded');
+        i++;
+        decodeNext();
+      }, charDelay);
+    }
+    setTimeout(decodeNext, initialDelay);
+  }
+
+  
+
+
+  /* ── DECODE ANIMATION ── */
+  (function() {
+    const CHAR_DELAY = 65;
+    const cipher = "Rqh eolqn.\nRqh eolqn dqg brx zrxogq'w eh uhdglqj wklv.\nBrx nhsw brxu hbhv rshq.\nQrz nhhs brxu plqg rshq wrr.\nWkh Wuxwk lv douhdgb khuh.\nBrx mxvw kdyhq'w vhhq lw bhw.";
+    const plain  = "One blink.\nOne blink and you wouldn't be reading this.\nYou kept your eyes open.\nNow keep your mind open too.\nThe Truth is already here.\nYou just haven't seen it yet.";
+    const block  = document.querySelector('.enigma-plain');
+    if (!block) return;
+
+    // Build spans from cipher text
+    block.innerHTML = '';
+    const spans = [];
+    for (let i = 0; i < cipher.length; i++) {
+      if (cipher[i] === '\n') {
+        block.appendChild(document.createElement('br'));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = cipher[i];
+        block.appendChild(span);
+        spans.push({ span, target: plain[i] || cipher[i], isLetter: /[a-zA-Z]/.test(cipher[i]) });
+      }
+    }
+
+    // Cursor
+    const cur = document.createElement('span');
+    cur.className = 'cursor';
+    block.appendChild(cur);
+
+    // Decode
+    let i = 0;
+    function decodeNext() {
+      while (i < spans.length && !spans[i].isLetter) {
+        spans[i].span.classList.add('decoded');
+        i++;
+      }
+      if (i >= spans.length) return;
+      const { span, target } = spans[i];
+      span.classList.add('decoding');
+      span.textContent = target;
+      setTimeout(() => {
+        span.classList.remove('decoding');
+        span.classList.add('decoded');
+        i++;
+        setTimeout(decodeNext, CHAR_DELAY);
+      }, CHAR_DELAY / 2);
+    }
+    setTimeout(decodeNext, 1000);
+  })();
+
 </script>
 
 </body>
