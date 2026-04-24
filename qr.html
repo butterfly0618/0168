@@ -166,7 +166,7 @@
   }
   .qr-piece.unlocked img {
     opacity: 1;
-    filter: grayscale(0.2) sepia(0.15) brightness(0.85) contrast(1.1);
+    filter: grayscale(1) invert(1) sepia(1) hue-rotate(5deg) saturate(3) brightness(0.75) contrast(1.4);
   }
 
   /* Glitch reveal animation */
@@ -185,7 +185,7 @@
     45%  { filter: brightness(1.5) sepia(1); opacity: 0.8; clip-path: inset(20% 0 0 0); }
     60%  { filter: brightness(0) invert(1); opacity: 0.9; clip-path: inset(10% 0 0 0); }
     80%  { filter: brightness(1.2); opacity: 1; clip-path: inset(0); }
-    100% { filter: grayscale(0.2) sepia(0.15) brightness(0.85) contrast(1.1); opacity: 1; clip-path: inset(0); }
+    100% { filter: grayscale(1) invert(1) sepia(1) hue-rotate(5deg) saturate(3) brightness(0.75) contrast(1.4); opacity: 1; clip-path: inset(0); }
   }
 
   @keyframes flashOut {
@@ -279,7 +279,7 @@
   <!-- ── QR Grid ── -->
   <div class="qr-grid">
 
-    <div class="qr-piece" data-piece="1">
+  <div class="qr-piece" data-piece="1">
       <!--
         SOSTITUISCI src con il tuo QR code.
         Usa la STESSA immagine in tutti e 4 i pezzi.
@@ -303,7 +303,6 @@
       <img src="assets/finalsolution.png" alt="" />
       <div class="piece-lock">LOCKED</div>
     </div>
-
   </div>
 
   <!-- Progress -->
