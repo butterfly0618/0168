@@ -279,7 +279,7 @@
   <!-- ── QR Grid ── -->
   <div class="qr-grid">
 
-  <div class="qr-piece" data-piece="1">
+    <div class="qr-piece" data-piece="1">
       <!--
         SOSTITUISCI src con il tuo QR code.
         Usa la STESSA immagine in tutti e 4 i pezzi.
@@ -303,6 +303,7 @@
       <img src="assets/finalsolution.png" alt="" />
       <div class="piece-lock">LOCKED</div>
     </div>
+
   </div>
 
   <!-- Progress -->
@@ -385,80 +386,6 @@
   }
 
   // 3. Sblocca un pezzo nell'UI (con o senza animazione)
-  function unlockPiece(n, animate) {
-    const el = document.querySelector(`.qr-piece[data-piece="${n}"]`);
-    if (!el || el.classList.contains('unlocked')) return;
-
-    if (animate) {
-      el.classList.add('revealing');
-      setTimeout(() => {
-        el.classList.remove('revealing');
-        el.classList.add('unlocked');
-      }, 850);
-    } else {
-      el.classList.add('unlocked');
-    }
-  }
-
-  // 4. Aggiorna barra progresso
-  function updateProgress(unlocked) {
-    const count = unlocked.length;
-    document.getElementById('progress-label').textContent = `${count}/4`;
-    setTimeout(() => {
-      document.getElementById('progress-fill').style.width = `${(count / 4) * 100}%`;
-    }, 300);
-
-    if (count >= 4) {
-      setTimeout(() => {
-        document.getElementById('complete-msg').style.display = 'block';
-        document.getElementById('status-msg').style.display = 'none';
-      }, 1200);
-    }
-  }
-
-  // 5. Main
-  window.addEventListener('load', () => {
-    const saved   = getSaved();
-    const newPiece = getPieceFromURL();
-
-    // Sblocca pezzi già salvati (senza animazione)
-    saved.forEach(n => unlockPiece(n, false));
-
-    // Nuovo pezzo dall'URL?
-    if (newPiece && !saved.includes(newPiece)) {
-      // Breve delay per effetto drammatico
-      setTimeout(() => {
-        unlockPiece(newPiece, true);  // con animazione glitch
-
-        // Salva
-        saved.push(newPiece);
-        save(saved);
-        updateProgress(saved);
-
-        // Messaggio
-        const msg = document.getElementById('status-msg');
-        msg.textContent = `>> ${PIECE_MESSAGES[newPiece]}`;
-        msg.className = 'status-msg new-unlock';
-
-      }, 800);
-
-    } else {
-      updateProgress(saved);
-      if (saved.length > 0 && saved.length < 4) {
-        document.getElementById('status-msg').textContent =
-          `>> ${saved.length} FRAGMENT${saved.length > 1 ? 'S' : ''} RECOVERED`;
-      }
-    }
-
-    // Pulisci ?piece dall'URL senza ricaricare la pagina
-    if (newPiece) {
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  });
-</script>
-
-</body>
-</html>a animazione)
   function unlockPiece(n, animate) {
     const el = document.querySelector(`.qr-piece[data-piece="${n}"]`);
     if (!el || el.classList.contains('unlocked')) return;
