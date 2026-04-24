@@ -312,11 +312,13 @@
       { piece: 4, sx: W/2, sy: H/2, sw: W/2, sh: H/2, dx: W/2, dy: H/2 },
     ];
 
+    const iW = img.naturalWidth;   // 1223
+    const iH = img.naturalHeight;  // 1223
     quadrants.forEach(q => {
       if (unlocked.includes(q.piece)) {
-        // Disegna il quadrante
+        // Disegna il quadrante scalando dall'immagine originale
         ctx.save();
-        ctx.drawImage(img, q.sx, q.sy, q.sw, q.sh, q.dx, q.dy, q.sw, q.sh);
+        ctx.drawImage(img, q.sx/W*iW, q.sy/H*iH, iW/2, iH/2, q.dx, q.dy, q.sw, q.sh);
 
         // Applica filtro dorato: grayscale + tinta gold
         const imageData = ctx.getImageData(q.dx, q.dy, q.sw, q.sh);
