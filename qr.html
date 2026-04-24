@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERMINAL_B.R.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --primary: #c8b97a;
+    --dim: #333024;
+    --dim2: #4a4530;
+    --bg: #050505;
+    --glow: rgba(200, 185, 122, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--primary);
+    filter: brightness(0.9);
+    overflow: hidden;
+  }
+
+  .crt-overlay {
+    position: fixed;
+    inset: 0;
+    background:
+      linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
+      linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+    background-size: 100% 3px, 2px 100%;
+    z-index: 100;
+    pointer-events: none;
+    animation: flicker 0.15s infinite;
+  }
+  @keyframes flicker { 0% { opacity: 0.97; } 100% { opacity: 1; } }
+
+  .vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.95));
+    pointer-events: none;
+    z-index: 90;
+  }
+
+  .scan-flash {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(transparent 50%, rgba(200,185,122,0.015) 50%);
+    background-size: 100% 4px;
+    z-index: 80;
+    pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+  /* ── Wrap ── */
+  .wrap {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 90%;
+    max-width: 420px;
+    padding: 30px;
+    border-left: 2px solid var(--dim);
+  }
+
+  .header {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--dim);
+    padding-bottom: 5px;
+  }
+
+  .boot-msg {
+    font-size: 10px;
+    color: var(--dim2);
+    letter-spacing: 1px;
+  }
+
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--dim2);
+    text-transform: uppercase;
+  }
+
+  /* ── QR grid ── */
+  .qr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 3px;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .qr-piece {
+    position: relative;
+    overflow: hidden;
+    background: #0a0a0a;
+    border: 1px solid var(--dim);
+  }
+
+  /* Each piece shows a quadrant of the QR image */
+  .qr-piece img {
+    position: absolute;
+    width: 200%; /* 2x because it's half the image */
+    height: 200%;
+    object-fit: cover;
+    /* filter when locked */
+    filter: brightness(0) invert(0);
+    transition: filter 0.1s;
+    /* default: image hidden */
+    opacity: 0;
+  }
+
+  /* piece 1 = top-left */
+  .qr-piece[data-piece="1"] img { top: 0;    left: 0;    }
+  /* piece 2 = top-right */
+  .qr-piece[data-piece="2"] img { top: 0;    left: -100%; }
+  /* piece 3 = bottom-left */
+  .qr-piece[data-piece="3"] img { top: -100%; left: 0;    }
+  /* piece 4 = bottom-right */
+  .qr-piece[data-piece="4"] img { top: -100%; left: -100%; }
+
+  /* Locked overlay */
+  .piece-lock {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(50,48,36,0.4),
+      rgba(50,48,36,0.4) 2px,
+      transparent 2px,
+      transparent 8px
+    );
+    border: 1px solid var(--dim);
+    transition: opacity 0.5s;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--dim2);
+  }
+
+  /* UNLOCKED state */
+  .qr-piece.unlocked .piece-lock {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .qr-piece.unlocked img {
+    opacity: 1;
+    filter: grayscale(0.2) sepia(0.15) brightness(0.85) contrast(1.1);
+  }
+
+  /* Glitch reveal animation */
+  .qr-piece.revealing img {
+    opacity: 1;
+    animation: glitchReveal 0.8s steps(1) forwards;
+  }
+  .qr-piece.revealing .piece-lock {
+    animation: flashOut 0.8s steps(2) forwards;
+  }
+
+  @keyframes glitchReveal {
+    0%   { filter: brightness(0) invert(1); opacity: 0.3; clip-path: inset(80% 0 0 0); }
+    15%  { filter: brightness(2) invert(0) hue-rotate(90deg); opacity: 0.7; clip-path: inset(60% 0 0 0); }
+    30%  { filter: brightness(0) invert(1); opacity: 0.5; clip-path: inset(40% 0 0 0); }
+    45%  { filter: brightness(1.5) sepia(1); opacity: 0.8; clip-path: inset(20% 0 0 0); }
+    60%  { filter: brightness(0) invert(1); opacity: 0.9; clip-path: inset(10% 0 0 0); }
+    80%  { filter: brightness(1.2); opacity: 1; clip-path: inset(0); }
+    100% { filter: grayscale(0.2) sepia(0.15) brightness(0.85) contrast(1.1); opacity: 1; clip-path: inset(0); }
+  }
+
+  @keyframes flashOut {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.5; background: rgba(200,185,122,0.2); }
+    100% { opacity: 0; }
+  }
+
+  /* ── Progress bar ── */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--dim2);
+  }
+  .progress-bar {
+    flex: 1;
+    height: 2px;
+    background: var(--dim);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 0%;
+    transition: width 1.2s ease;
+    box-shadow: 0 0 6px var(--primary);
+  }
+
+  /* ── Status message ── */
+  .status-msg {
+    font-size: 10px;
+    color: var(--dim2);
+    letter-spacing: 1px;
+    min-height: 14px;
+    text-align: center;
+  }
+  .status-msg.new-unlock {
+    color: var(--primary);
+    text-shadow: 0 0 8px var(--glow);
+    animation: pulseTxt 1s ease 3;
+  }
+  @keyframes pulseTxt {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  /* ── Complete state ── */
+  .complete-msg {
+    display: none;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--primary);
+    text-transform: uppercase;
+    text-shadow: 0 0 12px var(--glow);
+    animation: pulseTxt 2s ease infinite;
+  }
+
+  .footer {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--dim);
+    padding-top: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="scan-flash"></div>
+<div class="vignette"></div>
+
+<div class="wrap">
+
+  <div class="header">
+    <span>FILE_ID: QR_MATRIX</span>
+    <span id="clock">--:--:--</span>
+  </div>
+
+  <div class="boot-msg" id="boot-msg">DECRYPTING_FRAGMENT...</div>
+
+  <div class="section-label">> RICOSTRUISCI IL SEGNALE</div>
+
+  <!-- ── QR Grid ── -->
+  <div class="qr-grid">
+
+    <div class="qr-piece" data-piece="1">
+      <!--
+        SOSTITUISCI src con il tuo QR code.
+        Usa la STESSA immagine in tutti e 4 i pezzi.
+        Il CSS mostra automaticamente il quadrante corretto.
+      -->
+      <img src="assets/finalsolution.png" alt="" />
+      <div class="piece-lock">LOCKED</div>
+    </div>
+
+    <div class="qr-piece" data-piece="2">
+      <img src="assets/finalsolution.png" alt="" />
+      <div class="piece-lock">LOCKED</div>
+    </div>
+
+    <div class="qr-piece" data-piece="3">
+      <img src="assets/finalsolution.png" alt="" />
+      <div class="piece-lock">LOCKED</div>
+    </div>
+
+    <div class="qr-piece" data-piece="4">
+      <img src="assets/finalsolution.png" alt="" />
+      <div class="piece-lock">LOCKED</div>
+    </div>
+
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-row">
+    <span id="progress-label">0/4</span>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <span>FRAGMENTS</span>
+  </div>
+
+  <div class="status-msg" id="status-msg"></div>
+  <div class="complete-msg" id="complete-msg">// SIGNAL RESTORED //</div>
+
+  <div class="footer">
+    <span>KEY_ID: 0x0168FxKa9bNc</span>
+    <span id="node">NODE: --</span>
+  </div>
+
+</div>
+
+<script>
+  /* ══════════════════════════════════════════
+     CONFIGURAZIONE
+     Modifica questi messaggi se vuoi
+  ══════════════════════════════════════════ */
+  const PIECE_MESSAGES = {
+    1: "FRAGMENT_1 DECRYPTED",
+    2: "FRAGMENT_2 DECRYPTED",
+    3: "FRAGMENT_3 DECRYPTED",
+    4: "FRAGMENT_4 DECRYPTED — SIGNAL COMPLETE",
+  };
+
+  const STORAGE_KEY = "br_qr_unlocked";   // chiave localStorage
+
+  /* ══════════════════════════════════════════
+     INIT
+  ══════════════════════════════════════════ */
+  function updateClock() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('it-IT', { hour12: false });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  const logs = [
+    "DECRYPTING_FRAGMENT...", "SIGNAL_PARTIAL...",
+    "REASSEMBLING_MATRIX...", "BREACH_PROTOCOL_ACTIVE",
+    "LISTENING...", "DATA_FRAGMENT_RECOVERED"
+  ];
+  setInterval(() => {
+    if (Math.random() > 0.75)
+      document.getElementById('boot-msg').textContent =
+        logs[Math.floor(Math.random() * logs.length)];
+  }, 3000);
+
+  document.getElementById('node').textContent =
+    'NODE: ' + Math.random().toString(16).slice(2,8).toUpperCase();
+
+  /* ══════════════════════════════════════════
+     LOGICA PEZZI
+  ══════════════════════════════════════════ */
+
+  // 1. Leggi pezzi già sbloccati da localStorage
+  function getSaved() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch { return []; }
+  }
+
+  function save(unlocked) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(unlocked));
+  }
+
+  // 2. Leggi ?piece=N dall'URL
+  function getPieceFromURL() {
+    const p = new URLSearchParams(window.location.search).get('piece');
+    const n = parseInt(p);
+    return (n >= 1 && n <= 4) ? n : null;
+  }
+
+  // 3. Sblocca un pezzo nell'UI (con o senza animazione)
+  function unlockPiece(n, animate) {
+    const el = document.querySelector(`.qr-piece[data-piece="${n}"]`);
+    if (!el || el.classList.contains('unlocked')) return;
+
+    if (animate) {
+      el.classList.add('revealing');
+      setTimeout(() => {
+        el.classList.remove('revealing');
+        el.classList.add('unlocked');
+      }, 850);
+    } else {
+      el.classList.add('unlocked');
+    }
+  }
+
+  // 4. Aggiorna barra progresso
+  function updateProgress(unlocked) {
+    const count = unlocked.length;
+    document.getElementById('progress-label').textContent = `${count}/4`;
+    setTimeout(() => {
+      document.getElementById('progress-fill').style.width = `${(count / 4) * 100}%`;
+    }, 300);
+
+    if (count >= 4) {
+      setTimeout(() => {
+        document.getElementById('complete-msg').style.display = 'block';
+        document.getElementById('status-msg').style.display = 'none';
+      }, 1200);
+    }
+  }
+
+  // 5. Main
+  window.addEventListener('load', () => {
+    const saved   = getSaved();
+    const newPiece = getPieceFromURL();
+
+    // Sblocca pezzi già salvati (senza animazione)
+    saved.forEach(n => unlockPiece(n, false));
+
+    // Nuovo pezzo dall'URL?
+    if (newPiece && !saved.includes(newPiece)) {
+      // Breve delay per effetto drammatico
+      setTimeout(() => {
+        unlockPiece(newPiece, true);  // con animazione glitch
+
+        // Salva
+        saved.push(newPiece);
+        save(saved);
+        updateProgress(saved);
+
+        // Messaggio
+        const msg = document.getElementById('status-msg');
+        msg.textContent = `>> ${PIECE_MESSAGES[newPiece]}`;
+        msg.className = 'status-msg new-unlock';
+
+      }, 800);
+
+    } else {
+      updateProgress(saved);
+      if (saved.length > 0 && saved.length < 4) {
+        document.getElementById('status-msg').textContent =
+          `>> ${saved.length} FRAGMENT${saved.length > 1 ? 'S' : ''} RECOVERED`;
+      }
+    }
+
+    // Pulisci ?piece dall'URL senza ricaricare la pagina
+    if (newPiece) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  });
+</script>
+
+</body>
+</html>
