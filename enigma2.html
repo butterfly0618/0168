@@ -84,8 +84,6 @@
     font-size: 13px; line-height: 2; color: #e8e0d0;
     letter-spacing: 0.5px;
     border-left: 1px solid var(--dim); padding-left: 16px;
-    opacity: 0;
-    animation: fadeIn 1.2s ease 0.6s forwards;
   }
 
   /* ── Image ── */
@@ -191,6 +189,81 @@
     animation: blink 1s step-end infinite;
   }
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── Decode chars ── */
+  .char { display: inline; color: var(--dim2); }
+  .char.decoded { color: #e8e0d0; }
+  .char.decoding {
+    color: var(--primary);
+    animation: glitchChar 0.12s steps(2) forwards;
+  }
+  @keyframes glitchChar {
+    0%   { opacity: 0.3; }
+    50%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  /* ── Lightbox ── */
+  .lightbox {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 300;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 30px;
+  }
+  .lightbox.active { display: flex; }
+
+  .lightbox-img {
+    max-width: 90vw;
+    max-height: 65vh;
+    object-fit: contain;
+    border: 1px solid var(--dim);
+    opacity: 0;
+  }
+  .lightbox-img.glitch-reveal {
+    animation: lbGlitch 0.9s steps(1) forwards;
+  }
+  @keyframes lbGlitch {
+    0%   { opacity: 0.1; filter: brightness(0) invert(1); clip-path: inset(90% 0 0 0); }
+    10%  { opacity: 0.5; filter: brightness(3) hue-rotate(90deg); clip-path: inset(70% 0 0 0); }
+    20%  { opacity: 0.2; filter: brightness(0) invert(1); clip-path: inset(50% 0 0 0); }
+    35%  { opacity: 0.7; filter: brightness(2) sepia(1); clip-path: inset(30% 0 0 0); }
+    50%  { opacity: 0.4; filter: brightness(0) invert(1); clip-path: inset(15% 0 0 0); }
+    70%  { opacity: 0.9; filter: brightness(1.3); clip-path: inset(5% 0 0 0); }
+    85%  { opacity: 1;   filter: brightness(0) invert(1); clip-path: inset(0); }
+    100% { opacity: 1;   filter: brightness(0.8) contrast(1.1); clip-path: inset(0); }
+  }
+
+  .lightbox-caption {
+    font-size: 9px; letter-spacing: 3px;
+    color: var(--dim2); text-align: center;
+  }
+
+  .lightbox-actions {
+    display: flex; gap: 12px;
+  }
+
+  .lb-btn {
+    background: transparent;
+    border: 1px solid var(--dim);
+    color: var(--dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px; letter-spacing: 3px;
+    padding: 8px 14px;
+    cursor: crosshair;
+    transition: all 0.4s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .lb-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 10px var(--glow);
+  }
 </style>
 </head>
 <body>
@@ -210,24 +283,12 @@
 
   <div class="section-label">> INTERCEPTED_TRANSMISSION</div>
 
-  <div class="enigma-plain">
-    One step complete, the road is long,<br>
-    The path ahead is hard and wrong.<br>
-    Two numbers hide in plain sight here,<br>
-    only sharp minds will make them clear.<br>
-    Their product is the key you need,<br>
-    think outside the box to proceed.<span class="cursor"></span>
-  </div>
+  <div class="enigma-plain"></div>
 
-  <!-- ── Image ── -->
-  <div class="img-block">
-    <img
-      class="enigma-image"
-      src="assets/Good_Luck.png"
-      alt="file_attachment"
-    />
-    <div class="image-caption">FILE_REF: ATTACH_001 // UNCLASSIFIED</div>
-  </div>
+  <!-- ── Image trigger button ── -->
+  <button class="access-btn" id="img-btn" onclick="openImage()">
+    >> OPEN_ATTACHED_FILE
+  </button>
 
   <hr class="sep">
 
@@ -240,6 +301,13 @@
   </div>
 
   <div class="status-msg" id="msg"></div>
+
+  <!-- ── Signature ── -->
+  <div style="font-family:'Fira Code',monospace; font-size:10px; letter-spacing:2px; color:var(--dim2); border-top: 1px solid var(--dim); padding-top:12px; line-height:1.8; opacity:0; animation: fadeIn 1s ease 2s forwards;">
+    
+    <div style="color:var(--primary);font-size:13px;letter-spacing:6px;">0168</div>
+    
+  </div>
 
   <a class="qr-link" href="qr.html">[ VIEW_SIGNAL_PROGRESS ]</a>
 
@@ -337,7 +405,133 @@
   document.getElementById('ans').addEventListener('keydown', e => {
     if (e.key === 'Enter') check();
   });
+
+  // ── Decode animation ──
+  function startDecode(blockId, cipherText, plainText, initialDelay, charDelay) {
+    initialDelay = initialDelay || 1200;
+    charDelay = charDelay || 38;
+    const block = document.getElementById(blockId);
+    block.innerHTML = '';
+    for (let i = 0; i < cipherText.length; i++) {
+      if (cipherText[i] === '\n') {
+        block.appendChild(document.createElement('br'));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = cipherText[i];
+        span.dataset.plain = plainText[i] !== undefined ? plainText[i] : cipherText[i];
+        block.appendChild(span);
+      }
+    }
+    const spans = block.querySelectorAll('.char');
+    let i = 0;
+    function decodeNext() {
+      if (i >= spans.length) return;
+      const span = spans[i];
+      span.classList.add('decoding');
+      span.textContent = span.dataset.plain;
+      setTimeout(function() {
+        span.classList.remove('decoding');
+        span.classList.add('decoded');
+        i++;
+        decodeNext();
+      }, charDelay);
+    }
+    setTimeout(decodeNext, initialDelay);
+  }
+
+  
+
+
+  /* ── DECODE ANIMATION ── */
+  (function() {
+    const CHAR_DELAY = 65;
+    const cipher = "Rqh vwhs frpsohwh, wkh urdg lv orqj,\nWkh sdwk dkhdg lv kdug dqg zurqj.\nWzr qxpehuv klgh lq sodlq vljkw khuh,\nrqob vkdus plqgv zloo pdnh wkhp fohdu.\nWkhlu surgxfw lv wkh nhb brx qhhg,\nwklqn rxwvlgh wkh era wr surfhhg.";
+    const plain  = "One step complete, the road is long,\nThe path ahead is hard and wrong.\nTwo numbers hide in plain sight here,\nonly sharp minds will make them clear.\nTheir product is the key you need,\nthink outside the box to proceed.";
+    const block  = document.querySelector('.enigma-plain');
+    if (!block) return;
+
+    // Build spans from cipher text
+    block.innerHTML = '';
+    const spans = [];
+    for (let i = 0; i < cipher.length; i++) {
+      if (cipher[i] === '\n') {
+        block.appendChild(document.createElement('br'));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = cipher[i];
+        block.appendChild(span);
+        spans.push({ span, target: plain[i] || cipher[i], isLetter: /[a-zA-Z]/.test(cipher[i]) });
+      }
+    }
+
+    // Cursor
+    const cur = document.createElement('span');
+    cur.className = 'cursor';
+    block.appendChild(cur);
+
+    // Decode
+    let i = 0;
+    function decodeNext() {
+      while (i < spans.length && !spans[i].isLetter) {
+        spans[i].span.classList.add('decoded');
+        i++;
+      }
+      if (i >= spans.length) return;
+      const { span, target } = spans[i];
+      span.classList.add('decoding');
+      span.textContent = target;
+      setTimeout(() => {
+        span.classList.remove('decoding');
+        span.classList.add('decoded');
+        i++;
+        setTimeout(decodeNext, CHAR_DELAY);
+      }, CHAR_DELAY / 2);
+    }
+    setTimeout(decodeNext, 1000);
+  })();
+
+
+  function openImage() {
+    const lb = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    lb.classList.add('active');
+    // trigger glitch after tiny delay
+    img.classList.remove('glitch-reveal');
+    void img.offsetWidth; // reflow
+    img.classList.add('glitch-reveal');
+    // after animation ends, keep image visible
+    img.addEventListener('animationend', () => {
+      img.style.opacity = 1;
+      img.style.filter = 'brightness(0.8) contrast(1.1)';
+    }, { once: true });
+    // hide button after first open
+    document.getElementById('img-btn').style.opacity = '0.3';
+    document.getElementById('img-btn').style.pointerEvents = 'none';
+  }
+
+  function closeImage() {
+    document.getElementById('lightbox').classList.remove('active');
+  }
+
+  // Close on backdrop click
+  document.getElementById('lightbox').addEventListener('click', function(e) {
+    if (e.target === this) closeImage();
+  });
+
 </script>
+
+
+<!-- ── Lightbox overlay ── -->
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-caption">FILE_REF: ATTACH_001 // UNCLASSIFIED</div>
+  <img class="lightbox-img" id="lightbox-img" src="assets/Good_Luck.png" alt="" />
+  <div class="lightbox-actions">
+    <a class="lb-btn" id="download-btn" href="assets/Good_Luck.png" download="ATTACH_001.png">>> DOWNLOAD_FILE</a>
+    <button class="lb-btn" onclick="closeImage()">>> CLOSE</button>
+  </div>
+</div>
 
 </body>
 </html>
