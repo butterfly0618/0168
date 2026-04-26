@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERMINAL_B.R. — TEST</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --primary: #c8b97a;
+    --dim: #333024;
+    --dim2: #4a4530;
+    --bg: #050505;
+    --glow: rgba(200, 185, 122, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    color: var(--primary);
+    filter: brightness(0.9);
+  }
+
+  .crt-overlay {
+    position: fixed; inset: 0;
+    background:
+      linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
+      linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+    background-size: 100% 3px, 2px 100%;
+    z-index: 100; pointer-events: none;
+    animation: flicker 0.15s infinite;
+  }
+  @keyframes flicker { 0% { opacity: 0.97; } 100% { opacity: 1; } }
+
+  .vignette {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.95));
+    pointer-events: none; z-index: 90;
+  }
+
+  .scan-flash {
+    position: fixed; inset: 0;
+    background: linear-gradient(transparent 50%, rgba(200,185,122,0.015) 50%);
+    background-size: 100% 4px;
+    z-index: 80; pointer-events: none;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+  /* ── Wrap ── */
+  .wrap {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; gap: 20px;
+    width: 90%; max-width: 540px;
+    padding: 30px;
+    border-left: 2px solid var(--dim);
+  }
+
+  .header {
+    font-size: 10px; letter-spacing: 2px; color: var(--dim);
+    display: flex; justify-content: space-between;
+    border-bottom: 1px solid var(--dim); padding-bottom: 5px;
+  }
+
+  .test-label {
+    font-size: 9px; letter-spacing: 4px; color: var(--dim2);
+    text-transform: uppercase;
+  }
+
+  .test-msg {
+    font-family: 'Fira Code', monospace;
+    font-size: 13px; line-height: 2; color: #e8e0d0;
+    letter-spacing: 0.5px;
+    border-left: 1px solid var(--dim); padding-left: 16px;
+  }
+
+  .test-msg .dim { color: var(--dim2); }
+
+  /* trigger button */
+  .trigger-btn {
+    background: transparent;
+    border: 1px solid var(--dim);
+    color: var(--dim2);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; letter-spacing: 4px;
+    padding: 12px 10px;
+    cursor: crosshair;
+    transition: all 0.5s;
+    width: 100%;
+  }
+  .trigger-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 12px var(--glow);
+  }
+
+  /* interval controls */
+  .controls {
+    display: flex; flex-direction: column; gap: 8px;
+    font-size: 9px; letter-spacing: 3px; color: var(--dim2);
+  }
+  .controls label { display: flex; justify-content: space-between; align-items: center; }
+  .controls input[type="range"] {
+    width: 60%;
+    accent-color: var(--primary);
+  }
+  .controls span { color: var(--primary); min-width: 40px; text-align: right; }
+
+  .sep { border: none; border-top: 1px solid var(--dim); opacity: 0.4; }
+
+  .footer {
+    font-size: 9px; letter-spacing: 2px; color: var(--dim);
+    display: flex; justify-content: space-between;
+    border-top: 1px solid var(--dim); padding-top: 5px;
+  }
+
+  /* ── Butterfly flash ── */
+  .bg-flash {
+    position: fixed;
+    z-index: 85;
+    pointer-events: none;
+    opacity: 0;
+    /* position and size set dynamically by JS */
+  }
+  .bg-flash img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: grayscale(1) invert(1) sepia(1) hue-rotate(5deg) saturate(3) brightness(0.75) contrast(1.4);
+  }
+  .bg-flash.visible {
+    animation: bgFlash 0.12s steps(1) forwards;
+  }
+  @keyframes bgFlash {
+    0%   { opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="scan-flash"></div>
+<div class="vignette"></div>
+
+<!-- Butterfly flash element -->
+<div class="bg-flash" id="bg-flash">
+  <img src="assets/butterflybackg.png" alt="" />
+</div>
+
+<div class="wrap">
+
+  <div class="header">
+    <span>FILE_ID: TEST_ENV</span>
+    <span id="clock">--:--:--</span>
+  </div>
+
+  <div class="test-label">> BUTTERFLY_FLASH_TEST</div>
+
+  <div class="test-msg">
+    <span class="dim">// </span>Waiting for signal...<br>
+    <span class="dim">// </span>Position: <span id="pos-log">--</span><br>
+    <span class="dim">// </span>Size: <span id="size-log">--</span><br>
+    <span class="dim">// </span>Next flash in: <span id="countdown">--</span>s
+  </div>
+
+  <hr class="sep">
+
+  <!-- Controls -->
+  <div class="controls">
+    <label>
+      MIN DELAY
+      <input type="range" id="min-delay" min="2" max="30" value="5" oninput="updateLabels()">
+      <span id="min-label">5s</span>
+    </label>
+    <label>
+      MAX DELAY
+      <input type="range" id="max-delay" min="5" max="60" value="12" oninput="updateLabels()">
+      <span id="max-label">12s</span>
+    </label>
+    <label>
+      DURATION
+      <input type="range" id="duration" min="50" max="600" value="120" step="10" oninput="updateLabels()">
+      <span id="dur-label">120ms</span>
+    </label>
+  </div>
+
+  <button class="trigger-btn" onclick="triggerFlash()">>> TRIGGER_MANUALLY</button>
+
+  <div class="footer">
+    <span>KEY_ID: 0x0168</span>
+    <span id="node">NODE: --</span>
+  </div>
+
+</div>
+
+<script>
+  // ── Clock ──
+  function updateClock() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('en-GB', { hour12: false });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  document.getElementById('node').textContent =
+    'NODE: ' + Math.random().toString(16).slice(2,8).toUpperCase();
+
+  // ── Labels ──
+  function updateLabels() {
+    document.getElementById('min-label').textContent = document.getElementById('min-delay').value + 's';
+    document.getElementById('max-label').textContent = document.getElementById('max-delay').value + 's';
+    document.getElementById('dur-label').textContent = document.getElementById('duration').value + 'ms';
+  }
+
+  // ── Audio — static noise burst via Web Audio API ──
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function playNoise(durationMs) {
+    if (!audioCtx) return;
+    const bufferSize = audioCtx.sampleRate * (durationMs / 1000);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    // White noise + low freq rumble
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.4;
+    }
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+
+    // Bandpass filter — makes it sound like interference
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 800 + Math.random() * 1200;
+    filter.Q.value = 0.5;
+
+    // Gain envelope — sharp attack, fast decay
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + durationMs / 1000);
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    source.start();
+    source.stop(audioCtx.currentTime + durationMs / 1000 + 0.01);
+  }
+
+  // ── Flash logic ──
+  // Single flash at random position/size
+  function showSingleFlash(el, dur) {
+    const sizePct = 30 + Math.random() * 55;
+    const sizeVw  = sizePct.toFixed(0);
+    const margin  = sizePct / 2;
+    const left    = margin + Math.random() * (100 - sizePct);
+    const top     = margin + Math.random() * (100 - sizePct);
+
+    el.style.width  = sizeVw + 'vw';
+    el.style.height = sizeVw + 'vw';
+    el.style.left   = left.toFixed(1) + 'vw';
+    el.style.top    = top.toFixed(1)  + 'vh';
+    el.style.transform = 'translate(-50%, -50%)';
+    el.style.animationDuration = dur + 'ms';
+
+    document.getElementById('pos-log').textContent =
+      `${left.toFixed(0)}vw / ${top.toFixed(0)}vh`;
+    document.getElementById('size-log').textContent = sizeVw + 'vw';
+
+    el.classList.remove('visible');
+    void el.offsetWidth;
+    el.classList.add('visible');
+
+    return new Promise(resolve => setTimeout(() => {
+      el.classList.remove('visible');
+      resolve();
+    }, dur + 20));
+  }
+
+  function triggerFlash() {
+    initAudio();
+
+    const el  = document.getElementById('bg-flash');
+    const dur = parseInt(document.getElementById('duration').value);
+
+    // Random number of flashes: 1, 2 or 3
+    // weights: 1 flash = 60%, 2 flashes = 30%, 3 flashes = 10%
+    const r = Math.random();
+    const count = r < 0.6 ? 1 : r < 0.9 ? 2 : 3;
+
+    document.getElementById('size-log').textContent =
+      document.getElementById('size-log').textContent + ` (x${count})`;
+
+    // Play noise for each flash
+    async function runFlashes(n) {
+      for (let i = 0; i < n; i++) {
+        playNoise(dur);
+        await showSingleFlash(el, dur);
+        if (i < n - 1) {
+          // tiny gap between flashes — feels like a stutter
+          await new Promise(r => setTimeout(r, 30 + Math.random() * 60));
+        }
+      }
+    }
+
+    runFlashes(count);
+  }
+
+  // ── Auto scheduler ──
+  let nextTimeout = null;
+  let nextTime = 0;
+
+  function scheduleFlash() {
+    const minD = parseInt(document.getElementById('min-delay').value) * 1000;
+    const maxD = parseInt(document.getElementById('max-delay').value) * 1000;
+    const delay = minD + Math.random() * (maxD - minD);
+    nextTime = Date.now() + delay;
+
+    nextTimeout = setTimeout(() => {
+      triggerFlash();
+      scheduleFlash();
+    }, delay);
+  }
+
+  // Countdown display
+  setInterval(() => {
+    if (nextTime > 0) {
+      const remaining = Math.max(0, ((nextTime - Date.now()) / 1000)).toFixed(1);
+      document.getElementById('countdown').textContent = remaining;
+    }
+  }, 100);
+
+  // Start after first user interaction (needed for AudioContext)
+  document.addEventListener('click', function startOnce() {
+    initAudio();
+    scheduleFlash();
+    document.removeEventListener('click', startOnce);
+  }, { once: true });
+
+  // Also start on first manual trigger
+  scheduleFlash();
+</script>
+
+</body>
+</html>
