@@ -293,33 +293,6 @@
     50%  { opacity: 1; }
     100% { opacity: 1; }
   }
-
-  /* ── Butterfly flash ── */
-  .bg-flash {
-    position: fixed;
-    inset: 0;
-    z-index: 85;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    opacity: 0;
-  }
-  .bg-flash img {
-    max-width: 90vw;
-    max-height: 90vh;
-    object-fit: contain;
-    filter: grayscale(1) invert(1) sepia(1) hue-rotate(5deg) saturate(3) brightness(0.75) contrast(1.4);
-  }
-  .bg-flash.visible {
-    animation: bgFlash 0.12s steps(1) forwards;
-  }
-  @keyframes bgFlash {
-    0%   { opacity: 0; }
-    10%  { opacity: 1; }
-    90%  { opacity: 1; }
-    100% { opacity: 0; }
-  }
 </style>
 </head>
 <body>
@@ -327,12 +300,6 @@
 <div class="crt-overlay"></div>
 <div class="scan-flash"></div>
 <div class="vignette"></div>
-
-<!-- ── Butterfly flash ── -->
-<div class="bg-flash" id="bg-flash">
-  <img src="assets/butterflybackg.png" alt="" />
-</div>
-
 
 <div class="wrap" id="main-ui">
 
@@ -526,7 +493,7 @@
 
   /* ── DECODE ANIMATION ── */
   (function() {
-    const CHAR_DELAY = 65;
+    const CHAR_DELAY = 40;
     const cipher = "Rqh eolqn.\nRqh eolqn dqg brx zrxogq'w eh uhdglqj wklv.\nBrx nhsw brxu hbhv rshq.\nQrz nhhs brxu plqg rshq wrr.\nWkh Wuxwk lv douhdgb khuh.\nBrx mxvw kdyhq'w vhhq lw bhw.";
     const plain  = "One blink.\nOne blink and you wouldn't be reading this.\nYou kept your eyes open.\nNow keep your mind open too.\nThe Truth is already here.\nYou just haven't seen it yet.";
     const block  = document.querySelector('.enigma-plain');
@@ -571,25 +538,6 @@
       }, CHAR_DELAY / 2);
     }
     setTimeout(decodeNext, 1000);
-  })();
-
-
-  // ── Butterfly background flash ──
-  (function() {
-    function scheduleFlash() {
-      // random interval between 15s and 45s
-      const delay = 15000 + Math.random() * 30000;
-      setTimeout(() => {
-        const el = document.getElementById('bg-flash');
-        if (!el) return;
-        el.classList.add('visible');
-        setTimeout(() => {
-          el.classList.remove('visible');
-          scheduleFlash();
-        }, 120);
-      }, delay);
-    }
-    scheduleFlash();
   })();
 
 </script>
