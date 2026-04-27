@@ -1,0 +1,307 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500&family=Share+Tech+Mono&display=swap');
+
+/* ── Variabili ── */
+:root {
+  --primary: #c8b97a;
+  --dim:     #333024;
+  --dim2:    #4a4530;
+  --bg:      #050505;
+  --glow:    rgba(200, 185, 122, 0.15);
+}
+
+/* ── Reset ── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── Body ── */
+body {
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Share Tech Mono', monospace;
+  overflow: hidden;
+  color: var(--primary);
+  filter: brightness(0.9);
+}
+
+/* ── Effetti CRT ── */
+.crt-overlay {
+  position: fixed; inset: 0;
+  background:
+    linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
+    linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+  background-size: 100% 3px, 2px 100%;
+  z-index: 100; pointer-events: none;
+  animation: flicker 0.15s infinite;
+}
+@keyframes flicker { 0% { opacity: 0.97; } 100% { opacity: 1; } }
+
+.vignette {
+  position: fixed; inset: 0;
+  background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.95));
+  pointer-events: none; z-index: 90;
+}
+
+.scan-flash {
+  position: fixed; inset: 0;
+  background: linear-gradient(transparent 50%, rgba(200,185,122,0.015) 50%);
+  background-size: 100% 4px;
+  z-index: 80; pointer-events: none;
+  animation: scanMove 8s linear infinite;
+}
+@keyframes scanMove { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+
+/* ── Layout principale ── */
+.wrap {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; gap: 18px;
+  width: 90%; max-width: 540px;
+  padding: 30px;
+  border-left: 2px solid var(--dim);
+  max-height: 96vh; overflow-y: auto; scrollbar-width: none;
+}
+.wrap::-webkit-scrollbar { display: none; }
+
+/* ── Componenti UI ── */
+.header {
+  font-size: 10px; letter-spacing: 2px; color: var(--dim);
+  display: flex; justify-content: space-between;
+  border-bottom: 1px solid var(--dim); padding-bottom: 5px;
+}
+
+.boot-msg { font-size: 10px; color: var(--dim2); letter-spacing: 1px; }
+
+.section-label {
+  font-size: 9px; letter-spacing: 4px;
+  color: var(--dim2); text-transform: uppercase;
+}
+
+.footer {
+  font-size: 9px; letter-spacing: 2px; color: var(--dim);
+  display: flex; justify-content: space-between;
+  border-top: 1px solid var(--dim); padding-top: 5px;
+}
+
+.sep { border: none; border-top: 1px solid var(--dim); opacity: 0.4; }
+
+.qr-link {
+  font-size: 9px; letter-spacing: 3px; color: var(--dim2);
+  text-align: right; cursor: crosshair; text-decoration: none;
+  transition: color 0.3s;
+  opacity: 0; animation: fadeIn 1s ease 2s forwards;
+}
+.qr-link:hover { color: var(--primary); }
+
+/* ── Input area (enigma pages) ── */
+.input-area {
+  display: flex; flex-direction: column; gap: 10px;
+  opacity: 0;
+  animation: fadeIn 1s ease 1.6s forwards;
+}
+
+.input-row {
+  display: flex; align-items: center;
+  background: rgba(0,0,0,0.4);
+}
+
+.prefix {
+  padding-right: 15px; color: var(--primary); font-size: 18px;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+input[type="text"] {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: #e8e0d0; font-family: 'Fira Code', monospace;
+  font-size: 14px; letter-spacing: 5px; text-transform: uppercase;
+}
+
+button {
+  background: transparent; border: 1px solid var(--dim);
+  color: var(--dim); font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 4px; padding: 10px;
+  cursor: crosshair; transition: all 0.5s;
+}
+button:hover {
+  color: var(--primary); border-color: var(--primary);
+  box-shadow: 0 0 10px var(--glow);
+}
+
+.status-msg { font-size: 10px; height: 14px; color: var(--dim); }
+
+/* ── Testo enigma ── */
+.enigma-plain {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px; line-height: 2; color: #e8e0d0;
+  letter-spacing: 0.5px;
+  border-left: 1px solid var(--dim); padding-left: 16px;
+}
+
+/* ── Decode chars ── */
+.char { display: inline; color: var(--dim2); }
+.char.decoded { color: #e8e0d0; }
+.char.decoding {
+  color: var(--primary);
+  animation: glitchChar 0.12s steps(2) forwards;
+}
+@keyframes glitchChar {
+  0%   { opacity: 0.3; }
+  50%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* ── Cursore lampeggiante ── */
+.cursor {
+  display: inline-block; width: 8px; height: 13px;
+  background: var(--primary); vertical-align: middle; margin-left: 4px;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* ── Firma 0168 ── */
+.signature {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px; letter-spacing: 6px;
+  color: var(--primary);
+  border-top: 1px solid var(--dim);
+  padding-top: 12px;
+  opacity: 0;
+  animation: fadeIn 1s ease 2s forwards;
+}
+
+/* ── Success screen ── */
+.success-screen {
+  position: fixed; inset: 0; background: #000;
+  z-index: 200; display: none;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px;
+}
+#typewriter {
+  font-size: 18px; letter-spacing: 8px; color: var(--primary);
+  text-transform: uppercase; text-shadow: 0 0 15px var(--primary);
+}
+#piece-notice {
+  font-size: 10px; letter-spacing: 4px; color: var(--dim2);
+  opacity: 0; transition: opacity 1s ease 1s;
+}
+#piece-notice.visible { opacity: 1; }
+
+/* ── Feedback input ── */
+.input-row.error  { animation: shake 0.4s, flashRed 0.4s; border: 1px solid #5e1111; }
+.input-row.success { animation: flashGreen 0.6s; border: 1px solid var(--primary); }
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60% { transform: translateX(-6px); }
+  40%,80% { transform: translateX(6px); }
+}
+@keyframes flashRed {
+  0%   { box-shadow: 0 0 0 rgba(94,17,0); }
+  50%  { box-shadow: 0 0 20px rgba(94,17,17,0.8); }
+  100% { box-shadow: 0 0 0 rgba(94,17,17,0); }
+}
+@keyframes flashGreen {
+  0%   { box-shadow: 0 0 0 rgba(200,185,122,0); }
+  50%  { box-shadow: 0 0 25px var(--glow); }
+  100% { box-shadow: 0 0 0 rgba(200,185,122,0); }
+}
+
+/* ── Collapse effect (success transition) ── */
+.collapsing .wrap {
+  animation: pageGlitch 0.3s steps(2) infinite,
+             pageTear 1.2s ease-in forwards 0.3s;
+}
+.collapsing .crt-overlay {
+  animation: flicker 0.05s infinite,
+             crtShutdown 1.5s ease-in forwards 0.5s;
+}
+.collapsing .vignette {
+  animation: vignetteClose 1.5s ease-in forwards 0.3s;
+}
+.collapsing .scan-flash {
+  animation: scanMove 0.2s linear infinite, scanFreakout 1.5s ease-in forwards;
+}
+
+@keyframes pageGlitch {
+  0%   { transform: translate(0); filter: brightness(0.9); }
+  20%  { transform: translate(-2px, 2px); filter: brightness(1.2); }
+  40%  { transform: translate(2px, -1px); filter: brightness(0.7); }
+  60%  { transform: translate(-1px, -2px); filter: brightness(1.3); }
+  80%  { transform: translate(1px, 1px); filter: brightness(0.8); }
+  100% { transform: translate(0); filter: brightness(0.9); }
+}
+@keyframes pageTear {
+  0%   { transform: perspective(800px) rotateX(0deg); opacity: 1; }
+  30%  { transform: perspective(800px) rotateX(5deg) scaleY(0.98); }
+  100% { transform: perspective(800px) rotateX(15deg) scaleY(0) translateY(50px); opacity: 0; }
+}
+@keyframes crtShutdown {
+  0%   { opacity: 1; }
+  60%  { opacity: 1; background-size: 100% 3px, 2px 100%; }
+  80%  { opacity: 1; background: #fff; background-size: 100% 100%; }
+  85%  { opacity: 1; background: #fff; transform: scaleY(0.02) scaleX(1); }
+  100% { opacity: 0; background: #000; transform: scaleY(0) scaleX(0); }
+}
+@keyframes vignetteClose {
+  to { background: radial-gradient(circle, transparent 0%, rgba(0,0,0,1) 70%); }
+}
+@keyframes scanFreakout {
+  0%   { opacity: 1; }
+  70%  { opacity: 1; background-size: 100% 4px; }
+  100% { opacity: 0; background-size: 100% 1px; }
+}
+
+/* ── Animazioni generiche ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Bootlog screen (enigma1) ── */
+.bootlog-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--primary);
+}
+.bootlog-screen.hidden {
+  animation: bootFadeOut 0.8s ease-out forwards;
+}
+@keyframes bootFadeOut { to { opacity: 0; pointer-events: none; } }
+
+.bootlog-header {
+  font-size: 10px; letter-spacing: 4px;
+  color: var(--dim2); text-transform: uppercase;
+  opacity: 0; animation: fadeIn 0.5s ease forwards;
+}
+.bootlog-log {
+  width: 90%; max-width: 500px;
+  font-size: 9px; letter-spacing: 1px;
+  color: var(--dim); line-height: 1.8;
+  height: 120px; overflow: hidden;
+}
+.bootlog-log div { opacity: 0; animation: logLineAppear 0.1s ease forwards; }
+@keyframes logLineAppear { to { opacity: 1; } }
+
+.bootlog-progress {
+  width: 90%; max-width: 500px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.bootlog-bar-wrap {
+  border: 1px solid var(--dim); padding: 2px; height: 20px;
+}
+.bootlog-bar {
+  height: 100%; font-size: 12px; line-height: 14px;
+  letter-spacing: 0; color: var(--primary);
+  white-space: nowrap; overflow: hidden;
+}
+.bootlog-percent { font-size: 10px; letter-spacing: 2px; color: var(--dim2); text-align: right; }
+.bootlog-status  { font-size: 9px; letter-spacing: 2px; color: var(--primary); height: 14px; }
+
+#main-ui { opacity: 0; }
+#main-ui.loaded { animation: mainFadeIn 0.8s ease forwards; }
+@keyframes mainFadeIn { from { opacity: 0; } to { opacity: 1; } }
