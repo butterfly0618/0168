@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TERMINAL_B.R.</title>
+  <link rel="stylesheet" href="terminal.css">
+  <style>
+    /* fine.html non ha max-height né overflow — testo statico */
+    .wrap { max-height: none; overflow-y: visible; gap: 28px; }
+
+    .decode-block {
+      font-family: 'Fira Code', monospace;
+      font-size: 14px; line-height: 2.2; letter-spacing: 1px;
+      border-left: 1px solid var(--dim); padding-left: 16px;
+      min-height: 120px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="scan-flash"></div>
+<div class="vignette"></div>
+
+<div class="wrap">
+
+  <div class="header">
+    <span>FILE_ID: TERMINAL_END</span>
+    <span id="clock">--:--:--</span>
+  </div>
+
+  <div class="boot-msg" id="boot-msg">DECRYPTING_FINAL_MESSAGE...</div>
+  <div class="section-label">> FINAL_TRANSMISSION</div>
+
+  <div class="decode-block" id="decode-block"></div>
+
+  <div class="signature" id="signature">0168</div>
+
+  <a class="qr-link" id="qr-link" href="qr.html" style="opacity:0;">[ VIEW_SIGNAL_PROGRESS ]</a>
+
+  <div class="footer" id="footer" style="opacity:0;">
+    <span>KEY_ID: 0x0168</span>
+    <span id="node">NODE: --</span>
+  </div>
+
+</div>
+
+<script src="terminal.js"></script>
+<script>
+  startBootMsgLoop([
+    "DECRYPTING_FINAL_MESSAGE...", "SIGNAL_COMPLETE...",
+    "DECODE_LAYER_FINAL... OK", "TRANSMISSION_END"
+  ]);
+
+  /* ── Testo finale ── */
+  const cipherText = "Wklv lv wkh hqg ri brxu mrxuqhb.\nYhub jrrg.\nBrx qrz kdyh hyhubwklqj brx qhhg wr mrlq xv.\nJrrgebh";
+  const plainText  = "This is the end of your journey.\nVery good.\nYou now have everything you need to join us.\nGoodbye";
+
+  const block = document.getElementById('decode-block');
+
+  /* Costruisce gli span con il testo cifrato */
+  function buildSpans() {
+    block.innerHTML = '';
+    for (let i = 0; i < cipherText.length; i++) {
+      if (cipherText[i] === '\n') {
+        block.appendChild(document.createElement('br'));
+      } else {
+        const span = document.createElement('span');
+        span.className       = 'char';
+        span.textContent     = cipherText[i];
+        span.dataset.index   = i;
+        block.appendChild(span);
+      }
+    }
+  }
+
+  /* Decodifica e poi mostra firma + footer */
+  function decodeSequence() {
+    const spans     = block.querySelectorAll('.char');
+    const CHAR_DELAY = 40;
+    let i = 0;
+
+    function decodeNext() {
+      if (i >= spans.length) {
+        setTimeout(() => {
+          document.getElementById('signature').style.animation = 'fadeIn 1.5s ease forwards';
+          document.getElementById('qr-link').style.animation   = 'fadeIn 1.5s ease 0.5s forwards';
+          document.getElementById('footer').style.animation    = 'fadeIn 1.5s ease 0.8s forwards';
+        }, 400);
+        return;
+      }
+      const span   = spans[i];
+      const target = plainText[parseInt(span.dataset.index)] ?? span.textContent;
+      span.classList.add('decoding');
+      span.textContent = target;
+      setTimeout(() => {
+        span.classList.remove('decoding');
+        span.classList.add('decoded');
+        i++;
+        decodeNext();
+      }, CHAR_DELAY);
+    }
+
+    setTimeout(decodeNext, 1200);
+  }
+
+  buildSpans();
+  decodeSequence();
+</script>
+
+</body>
+</html>
