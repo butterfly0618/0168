@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TERMINAL_B.R.</title>
+  <link rel="stylesheet" href="terminal.css">
+  <style>
+    /* ── PDF attachment ── */
+    .pdf-block {
+      display: flex; align-items: center; gap: 14px;
+      border: 1px solid var(--dim);
+      padding: 14px 16px;
+      cursor: pointer; text-decoration: none;
+      transition: border-color 0.4s, box-shadow 0.4s;
+      opacity: 0; animation: fadeIn 1.2s ease 1s forwards;
+    }
+    .pdf-block:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--glow);
+    }
+    .pdf-icon { font-size: 22px; color: var(--primary); opacity: 0.7; flex-shrink: 0; }
+    .pdf-info { display: flex; flex-direction: column; gap: 4px; }
+    .pdf-name { font-size: 11px; letter-spacing: 3px; color: #e8e0d0; }
+    .pdf-meta { font-size: 9px;  letter-spacing: 2px; color: var(--dim2); }
+    .pdf-arrow {
+      margin-left: auto; font-size: 14px; color: var(--dim2);
+      transition: color 0.3s, transform 0.3s;
+    }
+    .pdf-block:hover .pdf-arrow { color: var(--primary); transform: translateX(3px); }
+  </style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="scan-flash"></div>
+<div class="vignette"></div>
+
+<div class="wrap" id="main-ui">
+
+  <div class="header">
+    <span>FILE_ID: PUZZLE_03</span>
+    <span id="clock">--:--:--</span>
+  </div>
+
+  <div class="boot-msg" id="boot-msg">SIGNAL_ACQUIRED...</div>
+  <div class="section-label">> INTERCEPTED_TRANSMISSION</div>
+
+  <div class="enigma-plain"></div>
+
+  <!-- PDF allegato -->
+  <a class="pdf-block" href="assets/bible.pdf" target="_blank">
+    <div class="pdf-icon">▤</div>
+    <div class="pdf-info">
+      <div class="pdf-name">DOCUMENT_ATTACHED.PDF</div>
+      <div class="pdf-meta">CLASSIFICATION: RESTRICTED // OPEN TO PROCEED</div>
+    </div>
+    <div class="pdf-arrow">→</div>
+  </a>
+
+  <hr class="sep">
+
+  <div class="input-area">
+    <div class="input-row">
+      <span class="prefix">></span>
+      <input type="text" id="ans" placeholder="PASS" autocomplete="off" spellcheck="false" />
+    </div>
+    <button onclick="check()">VALIDATE_IDENTITY</button>
+  </div>
+
+  <div class="status-msg" id="msg"></div>
+
+  <div class="signature">0168</div>
+
+  <a class="qr-link" href="qr.html">[ VIEW_SIGNAL_PROGRESS ]</a>
+
+  <div class="footer" style="opacity:0; animation: fadeIn 1s ease 2s forwards;">
+    <span>KEY_ID: 0x0168</span>
+    <span id="node">NODE: --</span>
+  </div>
+
+</div>
+
+<!-- Success screen -->
+<div class="success-screen" id="success">
+  <div id="typewriter"></div>
+  <div id="piece-notice">// FRAGMENT_03 SAVED //</div>
+</div>
+
+<script src="terminal.js"></script>
+<script>
+  /* ── Config enigma 3 ── */
+  const PIECE_NUMBER   = 3;
+  const SOLUTION_HASH  = "8ab2acf24a15b9226281e4e443cbf0c69c928e20b5cbb5ea9b984eb5a6349586";
+  const NEXT_URL       = "enigma4.html";
+  const SUCCESS_TEXT   = "we are watching.";
+  const REDIRECT_DELAY = 5000;
+
+  startBootMsgLoop([
+    "SIGNAL_ACQUIRED...", "DECRYPT_X64_CORE... OK",
+    "WARNING: VOID_LOG_DETECTED", "LISTENING...",
+    "ENCRYPT_LINK_ESTABLISHED", "DATA_FRAGMENT_RECOVERED"
+  ]);
+
+  runDecode(
+    "Brxu plqg lv rshq qrz.\nExw qrw hqrxjk.\nZh duh dprqj brx.\nZh zdwfk brx.\nZh nqrz brx.\nBrx kdyh qhyhu ehhq dorqh.\nWkh dqvzhu lv lq pb qdph.",
+    "Your mind is open now.\nBut not enough.\nWe are among you.\nWe watch you.\nWe know you.\nYou have never been alone.\nThe answer is in my name.",
+    '.enigma-plain'
+  );
+</script>
+
+</body>
+</html>
