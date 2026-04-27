@@ -302,6 +302,3 @@ button:hover {
 .bootlog-percent { font-size: 10px; letter-spacing: 2px; color: var(--dim2); text-align: right; }
 .bootlog-status  { font-size: 9px; letter-spacing: 2px; color: var(--primary); height: 14px; }
 
-#main-ui { opacity: 0; }
-#main-ui.loaded { animation: mainFadeIn 0.8s ease forwards; }
-@keyframes mainFadeIn { from { opacity: 0; } to { opacity: 1; } }
