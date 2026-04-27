@@ -14,6 +14,51 @@ updateClock();
 document.getElementById('node').textContent =
   'NODE: ' + Math.random().toString(16).slice(2, 8).toUpperCase();
 
+/* ── Inietta barra QR e active users nel DOM ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const wrap   = document.querySelector('.wrap');
+  const footer = document.getElementById('footer');
+  if (!wrap || !footer) return;
+
+  // Barra progresso QR
+  const qrBar = document.createElement('div');
+  qrBar.id = 'qr-progress-bar';
+  qrBar.innerHTML = `
+    <div class="qr-prog-row">
+      <span class="qr-prog-label">QR_SIGNAL</span>
+      <div class="qr-prog-bar"><div class="qr-prog-fill" id="qr-prog-fill"></div></div>
+      <span class="qr-prog-count" id="qr-prog-count">0/4</span>
+    </div>`;
+  wrap.insertBefore(qrBar, footer);
+
+  try {
+    const count = (JSON.parse(localStorage.getItem(STORAGE_KEY)) || []).length;
+    document.getElementById('qr-prog-fill').style.width = `${(count / 4) * 100}%`;
+    document.getElementById('qr-prog-count').textContent = `${count}/4`;
+  } catch(e) {}
+
+  // Active users
+  const users = document.createElement('div');
+  users.id = 'active-users';
+  users.innerHTML = `<span>// ACTIVE_USERS: <span id="user-count">1</span></span>`;
+  wrap.insertBefore(users, footer);
+
+  // Simulazione spike utenti
+  setInterval(() => {
+    const el = document.getElementById('user-count');
+    if (!el || el.textContent !== '1') return;
+    if (Math.random() < 0.08) {
+      const spike = Math.random() < 0.3 ? 3 : 2;
+      el.textContent = spike;
+      el.classList.add('user-spike');
+      setTimeout(() => {
+        el.textContent = 1;
+        el.classList.remove('user-spike');
+      }, (60 + Math.random() * 120) * 1000);
+    }
+  }, 30000);
+});
+
 /* ── Boot message rotante ── */
 function startBootMsgLoop(msgs) {
   setInterval(() => {
