@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TERMINAL_B.R.</title>
+  <link rel="stylesheet" href="terminal.css">
+  <style>
+    /* ── Enigma block ── */
+    .enigma-block {
+      display: flex; flex-direction: column; gap: 18px;
+      opacity: 0; animation: fadeIn 1.2s ease 0.6s forwards;
+    }
+
+    .enigma-cipher {
+      font-family: 'Fira Code', monospace;
+      font-size: 12px; line-height: 2;
+      color: var(--primary); letter-spacing: 2px;
+      border-left: 1px solid var(--dim2); padding-left: 16px;
+      opacity: 0.75;
+    }
+
+    .enigma-numbers {
+      font-family: 'Fira Code', monospace;
+      font-size: 11px; letter-spacing: 4px;
+      color: var(--dim2); padding-left: 16px;
+      border-left: 1px solid var(--dim);
+    }
+
+    /* Ritarda input per dare tempo al bootlog */
+    .input-area { animation-delay: 1.4s; }
+    .qr-link, .footer { animation: fadeIn 1s ease 2s forwards; }
+  </style>
+</head>
+<body>
+
+<!-- Bootlog overlay -->
+<div class="bootlog-screen" id="bootlog">
+  <div class="bootlog-header">TERMINAL_B.R. // BOOT_SEQUENCE</div>
+  <div class="bootlog-log" id="bootlog-log"></div>
+  <div class="bootlog-progress">
+    <div class="bootlog-bar-wrap">
+      <div class="bootlog-bar" id="bootlog-bar"></div>
+    </div>
+    <div class="bootlog-percent" id="bootlog-percent">0%</div>
+    <div class="bootlog-status" id="bootlog-status">INITIALIZING...</div>
+  </div>
+</div>
+
+<div class="crt-overlay"></div>
+<div class="scan-flash"></div>
+<div class="vignette"></div>
+
+<div class="wrap" id="main-ui">
+
+  <div class="header">
+    <span>FILE_ID: PUZZLE_01</span>
+    <span id="clock">--:--:--</span>
+  </div>
+
+  <div class="boot-msg" id="boot-msg">SIGNAL_ACQUIRED...</div>
+  <div class="section-label">> INTERCEPTED_TRANSMISSION</div>
+
+  <div class="enigma-block">
+    <div class="enigma-plain"></div>
+
+    <div class="enigma-cipher">
+      WKH DQVZHU KDV DOZDBV EHHQ LQ IURQW RI BRX.<br>
+      ORRN DJDLQ.
+    </div>
+
+    <div class="enigma-numbers">
+      19 &nbsp; 14 &nbsp; 23 &nbsp; 5 &nbsp; 38
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <div class="input-area">
+    <div class="input-row">
+      <span class="prefix">></span>
+      <input type="text" id="ans" placeholder="PASS" autocomplete="off" spellcheck="false" />
+    </div>
+    <button onclick="check()">VALIDATE_IDENTITY</button>
+  </div>
+
+  <div class="status-msg" id="msg"></div>
+
+  <div class="signature">0168</div>
+
+  <a class="qr-link" href="qr.html">[ VIEW_SIGNAL_PROGRESS ]</a>
+
+  <div class="footer" style="opacity:0; animation: fadeIn 1s ease 2s forwards;">
+    <span>KEY_ID: 0x0168</span>
+    <span id="node">NODE: --</span>
+  </div>
+
+</div>
+
+<!-- Success screen -->
+<div class="success-screen" id="success">
+  <div id="typewriter"></div>
+  <div id="piece-notice">// FRAGMENT_01 SAVED //</div>
+</div>
+
+<script src="terminal.js"></script>
+<script>
+  /* ── Config enigma 1 ── */
+  const PIECE_NUMBER   = 1;
+  const SOLUTION_HASH  = "3b5c470a7075cb192808d514a2bb1e2b5a6e0bcbfec0b9569fc6e153c99f7877";
+  const NEXT_URL       = "enigma2.html";
+  const SUCCESS_TEXT   = "very good.";
+  const REDIRECT_DELAY = 5000;
+
+  /* ── Boot messages ── */
+  startBootMsgLoop([
+    "SIGNAL_ACQUIRED...", "DECRYPT_X64_CORE... OK",
+    "WARNING: VOID_LOG_DETECTED", "LISTENING...",
+    "ENCRYPT_LINK_ESTABLISHED", "DATA_FRAGMENT_RECOVERED"
+  ]);
+
+  /* ── Avvia bootlog, poi decode ── */
+  runBootlog(() => {
+    runDecode(
+      "Rqh eolqn.\nRqh eolqn dqg brx zrxogq'w eh uhdglqj wklv.\nBrx nhsw brxu hbhv rshq.\nQrz nhhs brxu plqg rshq wrr.\nWkh Wuxwk lv douhdgb khuh.\nBrx mxvw kdyhq'w vhhq lw bhw.",
+      "One blink.\nOne blink and you wouldn't be reading this.\nYou kept your eyes open.\nNow keep your mind open too.\nThe Truth is already here.\nYou just haven't seen it yet.",
+      '.enigma-plain'
+    );
+  });
+</script>
+
+</body>
+</html>
