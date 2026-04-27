@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TERMINAL_B.R.</title>
+  <link rel="stylesheet" href="terminal.css">
+  <style>
+    /* Cursore grande centrato, specifico di questa pagina */
+    .cursor-boot {
+      display: inline-block;
+      width: 12px;
+      height: 22px;
+      background: var(--primary);
+      box-shadow: 0 0 10px rgba(200,185,122,0.5);
+      animation: blink 1s step-end infinite;
+    }
+  </style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="vignette"></div>
+
+<span class="cursor-boot"></span>
+
+<script>
+  setTimeout(() => { window.location.href = "enigma1.html"; }, 3000);
+</script>
+
+</body>
+</html>
