@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TERMINAL_B.R.</title>
+  <link rel="stylesheet" href="terminal.css">
+  <style>
+    .wrap { max-height: none; overflow-y: visible; gap: 22px; }
+
+    /* ── 404 glitch ── */
+    .error-wrap {
+      position: relative; height: 120px;
+      display: flex; align-items: center; overflow: hidden;
+    }
+
+    .error-code {
+      font-family: 'Fira Code', monospace;
+      font-size: clamp(72px, 18vw, 110px);
+      font-weight: 300; letter-spacing: 12px;
+      color: var(--primary);
+      text-shadow: 0 0 30px rgba(200,185,122,0.3);
+      position: relative; user-select: none;
+      animation: mainGlitch 4s infinite;
+    }
+
+    @keyframes mainGlitch {
+      0%,89%  { transform: translate(0,0) skew(0deg); filter: none; }
+      90%     { transform: translate(-3px, 1px) skew(-1deg); filter: brightness(1.5); }
+      91%     { transform: translate(3px, -1px) skew(1deg);  filter: brightness(0.5); }
+      92%     { transform: translate(-2px, 2px) skew(0.5deg); }
+      93%     { transform: translate(0,0) skew(0deg); filter: none; }
+      95%     { transform: translate(4px, 0) skew(-2deg); filter: hue-rotate(90deg) brightness(2); }
+      96%     { transform: translate(-4px, 1px); filter: brightness(0.3); }
+      97%     { transform: translate(2px, -2px) skew(1deg); filter: none; }
+      98%,100%{ transform: translate(0,0); filter: none; }
+    }
+
+    /* Ghost rosso */
+    .error-code::before {
+      content: '404'; position: absolute; top: 0; left: 0;
+      color: rgba(255, 40, 40, 0.6); text-shadow: none;
+      animation: ghostL 4s infinite;
+    }
+    @keyframes ghostL {
+      0%,89%  { transform: translate(0,0); opacity: 0; clip-path: inset(0 0 100% 0); }
+      90%     { transform: translate(-6px, 2px); opacity: 1; clip-path: inset(10% 0 40% 0); }
+      91%     { transform: translate(4px, -1px);            clip-path: inset(50% 0 20% 0); }
+      92%     { transform: translate(-3px, 0);              clip-path: inset(30% 0 60% 0); }
+      93%     { opacity: 0; clip-path: inset(0 0 100% 0); }
+      95%     { transform: translate(-8px, 3px); opacity: 1; clip-path: inset(0% 0 70% 0); }
+      96%     { transform: translate(5px, -2px);             clip-path: inset(60% 0 0% 0); }
+      97%,100%{ opacity: 0; }
+    }
+
+    /* Ghost cyan */
+    .error-code::after {
+      content: '404'; position: absolute; top: 0; left: 0;
+      color: rgba(0, 220, 200, 0.5); text-shadow: none;
+      animation: ghostR 4s infinite;
+    }
+    @keyframes ghostR {
+      0%,89%  { transform: translate(0,0); opacity: 0; clip-path: inset(0 0 100% 0); }
+      90%     { transform: translate(6px, -2px); opacity: 1; clip-path: inset(40% 0 10% 0); }
+      91%     { transform: translate(-5px, 1px);             clip-path: inset(20% 0 50% 0); }
+      92%     { transform: translate(3px, 0);                clip-path: inset(60% 0 30% 0); }
+      93%     { opacity: 0; clip-path: inset(0 0 100% 0); }
+      95%     { transform: translate(8px, -3px); opacity: 1; clip-path: inset(70% 0 0% 0); }
+      96%     { transform: translate(-4px, 2px);             clip-path: inset(0% 0 60% 0); }
+      97%,100%{ opacity: 0; }
+    }
+
+    /* Scanbar */
+    .scanbar {
+      position: absolute; left: 0; right: 0; height: 8px;
+      background: rgba(200,185,122,0.08);
+      animation: scanBar 4s infinite; pointer-events: none;
+    }
+    @keyframes scanBar {
+      0%,89%   { top: -10px; opacity: 0; }
+      90%      { top: 0%;    opacity: 1; }
+      96%      { top: 110%;  opacity: 1; }
+      97%,100% { opacity: 0; }
+    }
+
+    /* ── Messaggio ── */
+    .msg-block {
+      font-family: 'Fira Code', monospace;
+      font-size: 13px; line-height: 2; color: #e8e0d0;
+      letter-spacing: 0.5px;
+      border-left: 1px solid var(--dim); padding-left: 16px;
+      opacity: 0; animation: fadeIn 1s ease 0.8s forwards;
+    }
+    .msg-block .dim { color: var(--dim2); }
+
+    .back-btn {
+      background: transparent; border: 1px solid var(--dim);
+      color: var(--dim); font-family: 'Share Tech Mono', monospace;
+      font-size: 10px; letter-spacing: 4px; padding: 12px 10px;
+      cursor: crosshair; transition: all 0.5s;
+      text-decoration: none; display: block; text-align: center;
+      opacity: 0; animation: fadeIn 1s ease 1.4s forwards;
+    }
+    .back-btn:hover {
+      color: var(--primary); border-color: var(--primary);
+      box-shadow: 0 0 12px var(--glow);
+    }
+
+    .footer { opacity: 0; animation: fadeIn 1s ease 1.6s forwards; }
+  </style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+<div class="scan-flash"></div>
+<div class="vignette"></div>
+
+<div class="wrap">
+
+  <div class="header">
+    <span>FILE_ID: ERROR_LOG</span>
+    <span id="clock">--:--:--</span>
+  </div>
+
+  <div class="boot-msg" id="boot-msg">BREACH_DETECTED...</div>
+  <div class="section-label">> SYSTEM_RESPONSE</div>
+
+  <div class="error-wrap">
+    <div class="error-code">404</div>
+    <div class="scanbar"></div>
+  </div>
+
+  <div class="msg-block">
+    <span class="dim">// </span>FILE_NOT_FOUND<br>
+    <span class="dim">// </span>ACCESS_DENIED<br>
+    <span class="dim">// </span>THIS_PATH_DOES_NOT_EXIST<br>
+    <br>
+    You weren't supposed to be here.<br>
+    Or were you?<span class="cursor"></span>
+  </div>
+
+  <hr class="sep">
+
+  <a class="back-btn" href="index.html">>> RETURN_TO_SIGNAL</a>
+
+  <div class="footer">
+    <span>KEY_ID: 0x0168</span>
+    <span id="node">NODE: --</span>
+  </div>
+
+</div>
+
+<script src="terminal.js"></script>
+<script>
+  startBootMsgLoop([
+    "BREACH_DETECTED...", "ACCESS_DENIED...",
+    "UNAUTHORIZED_PATH...", "VOID_LOG_DETECTED",
+    "SIGNAL_LOST...", "TRACING_INTRUDER..."
+  ]);
+</script>
+
+</body>
+</html>
