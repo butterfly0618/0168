@@ -29,8 +29,99 @@ document.getElementById('node').textContent =
 /* ── Warning overlay (appare dopo 10 tentativi sbagliati) ── */
 let _failCount = 0;
 
+/* ── Degradazione progressiva (20 step) ── */
+const _degradeSteps = [
+  // fase 1 (1-5): quasi impercettibile
+  () => document.body.style.setProperty('--flicker-speed', '0.12s'),
+  () => document.body.style.filter = 'brightness(0.88)',
+  () => document.querySelector('.crt-overlay').style.opacity = '1.2',
+  () => document.body.style.filter = 'brightness(0.85) contrast(1.05)',
+  () => document.querySelector('.scan-flash') && (document.querySelector('.scan-flash').style.animationDuration = '6s'),
+
+  // fase 2 (6-10): testo che trema, scanline più aggressive
+  () => document.querySelector('.wrap').style.animation = 'subtleShake 4s infinite',
+  () => document.body.style.filter = 'brightness(0.82) contrast(1.1) saturate(0.9)',
+  () => document.querySelector('.scan-flash') && (document.querySelector('.scan-flash').style.animationDuration = '3s'),
+  () => document.querySelector('.wrap').style.animation = 'subtleShake 2s infinite',
+  () => document.body.style.filter = 'brightness(0.78) contrast(1.15) saturate(0.8) hue-rotate(5deg)',
+
+  // fase 3 (11-15): glitch visibili, colori alterati
+  () => { document.querySelector('.wrap').style.animation = 'mediumShake 1.5s infinite'; _startCharGlitch(); },
+  () => document.body.style.filter = 'brightness(0.72) contrast(1.2) saturate(0.6) hue-rotate(10deg)',
+  () => document.querySelector('.crt-overlay').style.background = 'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.08), rgba(0,255,0,0.04), rgba(0,0,255,0.08))',
+  () => document.querySelector('.wrap').style.animation = 'mediumShake 0.8s infinite',
+  () => document.body.style.filter = 'brightness(0.65) contrast(1.3) saturate(0.3) hue-rotate(20deg)',
+
+  // fase 4 (16-20): caos totale
+  () => { document.querySelector('.wrap').style.animation = 'heavyShake 0.4s infinite'; _maxGlitch(); },
+  () => document.body.style.filter = 'brightness(0.5) contrast(1.5) saturate(0) hue-rotate(40deg) invert(0.1)',
+  () => document.querySelector('.crt-overlay').style.opacity = '3',
+  () => { document.body.style.filter = 'brightness(0.3) contrast(2) saturate(0) hue-rotate(60deg) invert(0.2)'; document.querySelector('.wrap').style.animation = 'heavyShake 0.2s infinite'; },
+  () => _showCritical(),
+];
+
+let _charGlitchInterval = null;
+let _maxGlitchInterval  = null;
+
+function _startCharGlitch() {
+  const chars = '!@#$%^&*<>?/\\|{}[]~`░▒▓█▄▀■□▪▫';
+  _charGlitchInterval = setInterval(() => {
+    const textNodes = document.querySelector('.wrap');
+    if (!textNodes) return;
+    const spans = textNodes.querySelectorAll('.char.decoded, .enigma-plain, .boot-msg, .section-label');
+    if (!spans.length) return;
+    const target = spans[Math.floor(Math.random() * spans.length)];
+    const orig = target.textContent;
+    if (!orig.trim()) return;
+    const pos = Math.floor(Math.random() * orig.length);
+    const glitched = orig.substring(0, pos) + chars[Math.floor(Math.random() * chars.length)] + orig.substring(pos + 1);
+    target.textContent = glitched;
+    setTimeout(() => { target.textContent = orig; }, 80);
+  }, 300);
+}
+
+function _maxGlitch() {
+  const chars = '!@#$%^&*<>?/\\|{}[]~`░▒▓█▄▀■□';
+  _maxGlitchInterval = setInterval(() => {
+    const wrap = document.querySelector('.wrap');
+    if (!wrap) return;
+    const all = wrap.querySelectorAll('*');
+    for (let i = 0; i < 3; i++) {
+      const el = all[Math.floor(Math.random() * all.length)];
+      if (!el.children.length && el.textContent.trim()) {
+        const orig = el.textContent;
+        el.textContent = orig.split('').map(c =>
+          Math.random() < 0.3 ? chars[Math.floor(Math.random() * chars.length)] : c
+        ).join('');
+        setTimeout(() => { el.textContent = orig; }, 60);
+      }
+    }
+  }, 100);
+}
+
+function _showCritical() {
+  clearInterval(_charGlitchInterval);
+  clearInterval(_maxGlitchInterval);
+
+  let overlay = document.getElementById('warning-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'warning-overlay';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = `
+    <div class="warning-inner">
+      <div class="warning-icon">⚠︎</div>
+      <div class="warning-text">CRITICAL_DAMAGE</div>
+      <div class="warning-sub">RELOADING_</div>
+    </div>`;
+  overlay.classList.remove('warning-hide');
+  overlay.classList.add('warning-show');
+
+  setTimeout(() => { window.location.reload(); }, 2500);
+}
+
 function showWarning() {
-  // crea overlay se non esiste già
   let overlay = document.getElementById('warning-overlay');
   if (!overlay) {
     overlay = document.createElement('div');
@@ -43,14 +134,16 @@ function showWarning() {
       </div>`;
     document.body.appendChild(overlay);
   }
-
   overlay.classList.remove('warning-hide');
   overlay.classList.add('warning-show');
-
   setTimeout(() => {
     overlay.classList.remove('warning-show');
     overlay.classList.add('warning-hide');
   }, 2000);
+}
+
+function applyDegrade(step) {
+  if (step >= 1 && step <= 20) _degradeSteps[step - 1]();
 }
 
 /* ── Boot message rotante ── */
@@ -140,10 +233,10 @@ async function check() {
     msg.textContent = '>> ERROR: UNAUTHORIZED_BREACH_DETECTED';
 
     _failCount++;
-    if (_failCount >= 10) {
-      _failCount = 0;
-      showWarning();
-    }
+    applyDegrade(_failCount);
+
+    // warning a 10
+    if (_failCount === 10) showWarning();
 
     // suono errore
     try {
