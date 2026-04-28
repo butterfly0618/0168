@@ -258,7 +258,7 @@ button:hover {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-
+/* ── Bootlog screen (enigma1) ── */
 .bootlog-screen {
   position: fixed; inset: 0;
   background: var(--bg);
@@ -302,59 +302,6 @@ button:hover {
 .bootlog-percent { font-size: 10px; letter-spacing: 2px; color: var(--dim2); text-align: right; }
 .bootlog-status  { font-size: 9px; letter-spacing: 2px; color: var(--primary); height: 14px; }
 
-/* ── Warning overlay ── */
-#warning-overlay {
-  position: fixed; inset: 0;
-  z-index: 500;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.92);
-  pointer-events: none;
-  opacity: 0;
-}
-#warning-overlay.warning-show {
-  animation: warnIn 0.4s steps(2) forwards;
-}
-#warning-overlay.warning-hide {
-  animation: warnOut 0.6s ease forwards;
-}
-@keyframes warnIn {
-  0%   { opacity: 0; clip-path: inset(60% 0 60% 0); }
-  25%  { opacity: 1; clip-path: inset(30% 0 30% 0); filter: brightness(2); }
-  50%  { opacity: 0.6; clip-path: inset(10% 0 10% 0); }
-  75%  { opacity: 1; clip-path: inset(5% 0 5% 0); filter: brightness(1.5); }
-  100% { opacity: 1; clip-path: inset(0); filter: none; }
-}
-@keyframes warnOut {
-  from { opacity: 1; }
-  to   { opacity: 0; }
-}
-
-.warning-inner {
-  display: flex; flex-direction: column;
-  align-items: center; gap: 16px;
-  text-align: center;
-}
-.warning-icon {
-  font-size: clamp(80px, 20vw, 140px);
-  color: #c8321a;
-  text-shadow: 0 0 40px rgba(200,50,26,0.6);
-  animation: warnPulse 0.3s steps(2) infinite;
-}
-@keyframes warnPulse {
-  0%,100% { opacity: 1; }
-  50%     { opacity: 0.6; filter: brightness(1.8); }
-}
-.warning-text {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: clamp(28px, 7vw, 52px);
-  letter-spacing: 10px;
-  color: #c8321a;
-  text-shadow: 0 0 20px rgba(200,50,26,0.5);
-}
-.warning-sub {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: clamp(9px, 2vw, 13px);
-  letter-spacing: 4px;
-  color: #7a2010;
-}
-
+#main-ui { opacity: 0; }
+#main-ui.loaded { animation: mainFadeIn 0.8s ease forwards; }
+@keyframes mainFadeIn { from { opacity: 0; } to { opacity: 1; } }
