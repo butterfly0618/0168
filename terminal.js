@@ -4,15 +4,21 @@ const STORAGE_KEY = "br_qr_unlocked";
 
 /* ── Orologio ── */
 function updateClock() {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('en-GB', { hour12: false });
+  const el = document.getElementById('clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
 }
-setInterval(updateClock, 1000);
-updateClock();
 
-/* ── NODE ID casuale ── */
-document.getElementById('node').textContent =
-  'NODE: ' + Math.random().toString(16).slice(2, 8).toUpperCase();
+/* ── Init DOM-dependent on load ── */
+document.addEventListener('DOMContentLoaded', () => {
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  const node = document.getElementById('node');
+  if (node) node.textContent = 'NODE: ' + Math.random().toString(16).slice(2, 8).toUpperCase();
+
+  const ans = document.getElementById('ans');
+  if (ans) ans.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+});
 
 /* ── Title flicker ── */
 (function() {
@@ -254,10 +260,6 @@ async function check() {
     }, 2000);
   }
 }
-
-document.getElementById('ans')?.addEventListener('keydown', e => {
-  if (e.key === 'Enter') check();
-});
 
 /* ── Decode animation ──
    Decodifica carattere per carattere da cipher → plain.
