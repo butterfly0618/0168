@@ -4,61 +4,41 @@ const STORAGE_KEY = "br_qr_unlocked";
 
 /* ── Orologio ── */
 function updateClock() {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('en-GB', { hour12: false });
+  const el = document.getElementById('clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
 }
-setInterval(updateClock, 1000);
-updateClock();
 
-/* ── NODE ID casuale ── */
-document.getElementById('node').textContent =
-  'NODE: ' + Math.random().toString(16).slice(2, 8).toUpperCase();
+/* ── Init (aspetta il DOM) ── */
+document.addEventListener('DOMContentLoaded', () => {
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  const node = document.getElementById('node');
+  if (node) node.textContent = 'NODE: ' + Math.random().toString(16).slice(2, 8).toUpperCase();
+
+  const ans = document.getElementById('ans');
+  if (ans) ans.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+});
 
 /* ── Title flicker ── */
 (function() {
   const original = document.title;
-  const alts = ['[REDACTED]', '???', '_ _ _', 'TERMINAL_B.R.'];
+  const alts = ['[REDACTED]', '???', '_ _ _'];
   setInterval(() => {
     if (Math.random() < 0.15) {
-      document.title = alts[Math.floor(Math.random() * (alts.length - 1))];
+      document.title = alts[Math.floor(Math.random() * alts.length)];
       setTimeout(() => { document.title = original; }, 800 + Math.random() * 1200);
     }
   }, 8000);
 })();
 
-/* ── Warning overlay (appare dopo 10 tentativi sbagliati) ── */
-let _failCount = 0;
-
-function showWarning() {
-  // crea overlay se non esiste già
-  let overlay = document.getElementById('warning-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'warning-overlay';
-    overlay.innerHTML = `
-      <div class="warning-inner">
-        <div class="warning-icon">⚠︎</div>
-        <div class="warning-text">WARNING</div>
-        <div class="warning-sub">UNAUTHORIZED_ACCESS_ATTEMPT</div>
-      </div>`;
-    document.body.appendChild(overlay);
-  }
-
-  overlay.classList.remove('warning-hide');
-  overlay.classList.add('warning-show');
-
-  setTimeout(() => {
-    overlay.classList.remove('warning-show');
-    overlay.classList.add('warning-hide');
-  }, 2000);
-}
-
 /* ── Boot message rotante ── */
 function startBootMsgLoop(msgs) {
   setInterval(() => {
-    if (Math.random() > 0.8)
-      document.getElementById('boot-msg').textContent =
-        msgs[Math.floor(Math.random() * msgs.length)];
+    if (Math.random() > 0.8) {
+      const el = document.getElementById('boot-msg');
+      if (el) el.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+    }
   }, 3000);
 }
 
@@ -86,7 +66,31 @@ function unlockPiece(n) {
   } catch(e) {}
 }
 
-/* ── Verifica risposta (usata da tutti gli enigma) ── */
+/* ── Warning overlay (dopo 10 tentativi sbagliati) ── */
+let _failCount = 0;
+
+function showWarning() {
+  let overlay = document.getElementById('warning-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'warning-overlay';
+    overlay.innerHTML = `
+      <div class="warning-inner">
+        <div class="warning-icon">⚠︎</div>
+        <div class="warning-text">WARNING</div>
+        <div class="warning-sub">UNAUTHORIZED_ACCESS_ATTEMPT</div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+  overlay.classList.remove('warning-hide');
+  overlay.classList.add('warning-show');
+  setTimeout(() => {
+    overlay.classList.remove('warning-show');
+    overlay.classList.add('warning-hide');
+  }, 2000);
+}
+
+/* ── Verifica risposta ── */
 async function check() {
   const inputRow = document.querySelector('.input-row');
   const input    = document.getElementById('ans');
@@ -95,7 +99,7 @@ async function check() {
   const hash     = await sha256(val);
 
   inputRow.classList.remove('error', 'success');
-  void inputRow.offsetWidth; // forza reflow per riavviare animazione
+  void inputRow.offsetWidth;
 
   if (hash === SOLUTION_HASH) {
     inputRow.classList.add('success');
@@ -103,7 +107,6 @@ async function check() {
     msg.textContent = '>> ACCESS_GRANTED... SYSTEM_OVERRIDE';
     input.disabled  = true;
 
-    // suono successo
     try {
       const ctx  = new AudioContext();
       const osc  = ctx.createOscillator();
@@ -118,14 +121,11 @@ async function check() {
     } catch(e) {}
 
     unlockPiece(PIECE_NUMBER);
-
     setTimeout(() => document.body.classList.add('collapsing'), 300);
-
     setTimeout(() => {
       document.getElementById('main-ui').style.display = 'none';
       document.getElementById('success').style.display = 'flex';
       document.body.classList.remove('collapsing');
-
       setTimeout(() => {
         typeWriter(SUCCESS_TEXT, "typewriter", 250);
         setTimeout(() => document.getElementById('piece-notice').classList.add('visible'), 1000);
@@ -145,7 +145,6 @@ async function check() {
       showWarning();
     }
 
-    // suono errore
     try {
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
@@ -162,14 +161,7 @@ async function check() {
   }
 }
 
-document.getElementById('ans')?.addEventListener('keydown', e => {
-  if (e.key === 'Enter') check();
-});
-
-/* ── Decode animation ──
-   Decodifica carattere per carattere da cipher → plain.
-   Salta i non-lettere istantaneamente.
-   Chiama questa funzione dall'IIFE specifica di ogni enigma. */
+/* ── Decode animation ── */
 function runDecode(cipher, plain, selector, charDelay = 40, initialDelay = 1000) {
   const block = document.querySelector(selector);
   if (!block) return;
@@ -182,7 +174,7 @@ function runDecode(cipher, plain, selector, charDelay = 40, initialDelay = 1000)
       block.appendChild(document.createElement('br'));
     } else {
       const span = document.createElement('span');
-      span.className  = 'char';
+      span.className   = 'char';
       span.textContent = cipher[i];
       block.appendChild(span);
       spans.push({
@@ -193,20 +185,17 @@ function runDecode(cipher, plain, selector, charDelay = 40, initialDelay = 1000)
     }
   }
 
-  // cursore alla fine
   const cur = document.createElement('span');
   cur.className = 'cursor';
   block.appendChild(cur);
 
   let i = 0;
   function decodeNext() {
-    // salta non-lettere subito
     while (i < spans.length && !spans[i].isLetter) {
       spans[i].span.classList.add('decoded');
       i++;
     }
     if (i >= spans.length) return;
-
     const { span, target } = spans[i];
     span.classList.add('decoding');
     span.textContent = target;
@@ -271,14 +260,12 @@ function runBootlog(onComplete) {
 
   const interval = setInterval(() => {
     progress += Math.random() * 3 + 1;
-
     if (progress >= 100) {
       progress = 100;
       updateBar();
       statusEl.textContent = 'COMPLETE';
       addLogLine();
       clearInterval(interval);
-
       setTimeout(() => {
         bootlog.classList.add('hidden');
         mainUI.classList.add('loaded');
@@ -286,7 +273,6 @@ function runBootlog(onComplete) {
       }, 800);
       return;
     }
-
     updateBar();
     if (Math.random() > 0.6) addLogLine();
     if (Math.random() > 0.7) updateStatus();
