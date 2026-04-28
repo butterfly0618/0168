@@ -246,15 +246,9 @@ function runBootlog(onComplete) {
   let progress = 0, logIndex = 0, statusIndex = 0;
 
   function updateBar() {
-    const total  = 40;
-    const filled = Math.floor((progress / 100) * total);
-    let bar = '';
-    for (let i = 0; i < filled; i++)
-      bar += i < filled - 3 ? '█' : i < filled - 1 ? '▓' : '▒';
-    bar += '░'.repeat(total - filled);
-    barEl.textContent     = bar;
-    percentEl.textContent = Math.floor(progress) + '%';
-  }
+  barEl.style.width = Math.floor(progress) + '%';
+  percentEl.textContent = Math.floor(progress) + '%';
+}
 
   function addLogLine() {
     if (logIndex < bootMessages.length) {
