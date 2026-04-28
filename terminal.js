@@ -14,6 +14,45 @@ updateClock();
 document.getElementById('node').textContent =
   'NODE: ' + Math.random().toString(16).slice(2, 8).toUpperCase();
 
+/* ── Title flicker ── */
+(function() {
+  const original = document.title;
+  const alts = ['[REDACTED]', '???', '_ _ _', 'TERMINAL_B.R.'];
+  setInterval(() => {
+    if (Math.random() < 0.15) {
+      document.title = alts[Math.floor(Math.random() * (alts.length - 1))];
+      setTimeout(() => { document.title = original; }, 800 + Math.random() * 1200);
+    }
+  }, 8000);
+})();
+
+/* ── Warning overlay (appare dopo 10 tentativi sbagliati) ── */
+let _failCount = 0;
+
+function showWarning() {
+  // crea overlay se non esiste già
+  let overlay = document.getElementById('warning-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'warning-overlay';
+    overlay.innerHTML = `
+      <div class="warning-inner">
+        <div class="warning-icon">⚠︎</div>
+        <div class="warning-text">WARNING</div>
+        <div class="warning-sub">UNAUTHORIZED_ACCESS_ATTEMPT</div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+
+  overlay.classList.remove('warning-hide');
+  overlay.classList.add('warning-show');
+
+  setTimeout(() => {
+    overlay.classList.remove('warning-show');
+    overlay.classList.add('warning-hide');
+  }, 2000);
+}
+
 /* ── Boot message rotante ── */
 function startBootMsgLoop(msgs) {
   setInterval(() => {
@@ -99,6 +138,12 @@ async function check() {
     input.value     = '';
     msg.style.color = '#5e1111';
     msg.textContent = '>> ERROR: UNAUTHORIZED_BREACH_DETECTED';
+
+    _failCount++;
+    if (_failCount >= 10) {
+      _failCount = 0;
+      showWarning();
+    }
 
     // suono errore
     try {
