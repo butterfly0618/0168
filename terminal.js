@@ -8,7 +8,7 @@ function updateClock() {
   if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
 }
 
-/* ── Init DOM-dependent on load ── */
+/* ── Init (aspetta il DOM) ── */
 document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateClock, 1000);
   updateClock();
@@ -18,149 +18,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const ans = document.getElementById('ans');
   if (ans) ans.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
-
-  /* ── Degradazione progressiva (20 step) ── */
-  _buildDegradeSteps();
 });
 
 /* ── Title flicker ── */
 (function() {
   const original = document.title;
-  const alts = ['[REDACTED]', '???', '_ _ _', 'TERMINAL_B.R.'];
+  const alts = ['[REDACTED]', '???', '_ _ _'];
   setInterval(() => {
     if (Math.random() < 0.15) {
-      document.title = alts[Math.floor(Math.random() * (alts.length - 1))];
+      document.title = alts[Math.floor(Math.random() * alts.length)];
       setTimeout(() => { document.title = original; }, 800 + Math.random() * 1200);
     }
   }, 8000);
 })();
 
-/* ── Warning overlay (appare dopo 10 tentativi sbagliati) ── */
-let _failCount = 0;
-
-let _degradeSteps = [];
-
-function _buildDegradeSteps() {
-  _degradeSteps = [
-    // fase 1 (1-5)
-    () => document.body.style.setProperty('--flicker-speed', '0.12s'),
-    () => { document.body.style.filter = 'brightness(0.88)'; },
-    () => { const o = document.querySelector('.crt-overlay'); if(o) o.style.opacity = '1.2'; },
-    () => { document.body.style.filter = 'brightness(0.85) contrast(1.05)'; },
-    () => { const s = document.querySelector('.scan-flash'); if(s) s.style.animationDuration = '6s'; },
-    // fase 2 (6-10)
-    () => { const w = document.querySelector('.wrap'); if(w) w.style.animation = 'subtleShake 4s infinite'; },
-    () => { document.body.style.filter = 'brightness(0.82) contrast(1.1) saturate(0.9)'; },
-    () => { const s = document.querySelector('.scan-flash'); if(s) s.style.animationDuration = '3s'; },
-    () => { const w = document.querySelector('.wrap'); if(w) w.style.animation = 'subtleShake 2s infinite'; },
-    () => { document.body.style.filter = 'brightness(0.78) contrast(1.15) saturate(0.8) hue-rotate(5deg)'; },
-    // fase 3 (11-15)
-    () => { const w = document.querySelector('.wrap'); if(w) w.style.animation = 'mediumShake 1.5s infinite'; _startCharGlitch(); },
-    () => { document.body.style.filter = 'brightness(0.72) contrast(1.2) saturate(0.6) hue-rotate(10deg)'; },
-    () => { const o = document.querySelector('.crt-overlay'); if(o) o.style.background = 'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.08), rgba(0,255,0,0.04), rgba(0,0,255,0.08))'; },
-    () => { const w = document.querySelector('.wrap'); if(w) w.style.animation = 'mediumShake 0.8s infinite'; },
-    () => { document.body.style.filter = 'brightness(0.65) contrast(1.3) saturate(0.3) hue-rotate(20deg)'; },
-    // fase 4 (16-20)
-    () => { const w = document.querySelector('.wrap'); if(w) w.style.animation = 'heavyShake 0.4s infinite'; _maxGlitch(); },
-    () => { document.body.style.filter = 'brightness(0.5) contrast(1.5) saturate(0) hue-rotate(40deg) invert(0.1)'; },
-    () => { const o = document.querySelector('.crt-overlay'); if(o) o.style.opacity = '3'; },
-    () => { document.body.style.filter = 'brightness(0.3) contrast(2) saturate(0) hue-rotate(60deg) invert(0.2)'; const w = document.querySelector('.wrap'); if(w) w.style.animation = 'heavyShake 0.2s infinite'; },
-    () => _showCritical(),
-  ];
-}
-
-let _charGlitchInterval = null;
-let _maxGlitchInterval  = null;
-
-function _startCharGlitch() {
-  const chars = '!@#$%^&*<>?/\\|{}[]~`░▒▓█▄▀■□▪▫';
-  _charGlitchInterval = setInterval(() => {
-    const textNodes = document.querySelector('.wrap');
-    if (!textNodes) return;
-    const spans = textNodes.querySelectorAll('.char.decoded, .enigma-plain, .boot-msg, .section-label');
-    if (!spans.length) return;
-    const target = spans[Math.floor(Math.random() * spans.length)];
-    const orig = target.textContent;
-    if (!orig.trim()) return;
-    const pos = Math.floor(Math.random() * orig.length);
-    const glitched = orig.substring(0, pos) + chars[Math.floor(Math.random() * chars.length)] + orig.substring(pos + 1);
-    target.textContent = glitched;
-    setTimeout(() => { target.textContent = orig; }, 80);
-  }, 300);
-}
-
-function _maxGlitch() {
-  const chars = '!@#$%^&*<>?/\\|{}[]~`░▒▓█▄▀■□';
-  _maxGlitchInterval = setInterval(() => {
-    const wrap = document.querySelector('.wrap');
-    if (!wrap) return;
-    const all = wrap.querySelectorAll('*');
-    for (let i = 0; i < 3; i++) {
-      const el = all[Math.floor(Math.random() * all.length)];
-      if (!el.children.length && el.textContent.trim()) {
-        const orig = el.textContent;
-        el.textContent = orig.split('').map(c =>
-          Math.random() < 0.3 ? chars[Math.floor(Math.random() * chars.length)] : c
-        ).join('');
-        setTimeout(() => { el.textContent = orig; }, 60);
-      }
-    }
-  }, 100);
-}
-
-function _showCritical() {
-  clearInterval(_charGlitchInterval);
-  clearInterval(_maxGlitchInterval);
-
-  let overlay = document.getElementById('warning-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'warning-overlay';
-    document.body.appendChild(overlay);
-  }
-  overlay.innerHTML = `
-    <div class="warning-inner">
-      <div class="warning-icon">⚠︎</div>
-      <div class="warning-text">CRITICAL_DAMAGE</div>
-      <div class="warning-sub">RELOADING_</div>
-    </div>`;
-  overlay.classList.remove('warning-hide');
-  overlay.classList.add('warning-show');
-
-  setTimeout(() => { window.location.reload(); }, 2500);
-}
-
-function showWarning() {
-  let overlay = document.getElementById('warning-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'warning-overlay';
-    overlay.innerHTML = `
-      <div class="warning-inner">
-        <div class="warning-icon">⚠︎</div>
-        <div class="warning-text">WARNING</div>
-        <div class="warning-sub">UNAUTHORIZED_ACCESS_ATTEMPT</div>
-      </div>`;
-    document.body.appendChild(overlay);
-  }
-  overlay.classList.remove('warning-hide');
-  overlay.classList.add('warning-show');
-  setTimeout(() => {
-    overlay.classList.remove('warning-show');
-    overlay.classList.add('warning-hide');
-  }, 2000);
-}
-
-function applyDegrade(step) {
-  if (step >= 1 && step <= 20) _degradeSteps[step - 1]();
-}
-
 /* ── Boot message rotante ── */
 function startBootMsgLoop(msgs) {
   setInterval(() => {
-    if (Math.random() > 0.8)
-      document.getElementById('boot-msg').textContent =
-        msgs[Math.floor(Math.random() * msgs.length)];
+    if (Math.random() > 0.8) {
+      const el = document.getElementById('boot-msg');
+      if (el) el.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+    }
   }, 3000);
 }
 
@@ -188,7 +66,31 @@ function unlockPiece(n) {
   } catch(e) {}
 }
 
-/* ── Verifica risposta (usata da tutti gli enigma) ── */
+/* ── Warning overlay (dopo 10 tentativi sbagliati) ── */
+let _failCount = 0;
+
+function showWarning() {
+  let overlay = document.getElementById('warning-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'warning-overlay';
+    overlay.innerHTML = `
+      <div class="warning-inner">
+        <div class="warning-icon">⚠︎</div>
+        <div class="warning-text">WARNING</div>
+        <div class="warning-sub">UNAUTHORIZED_ACCESS_ATTEMPT</div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+  overlay.classList.remove('warning-hide');
+  overlay.classList.add('warning-show');
+  setTimeout(() => {
+    overlay.classList.remove('warning-show');
+    overlay.classList.add('warning-hide');
+  }, 2000);
+}
+
+/* ── Verifica risposta ── */
 async function check() {
   const inputRow = document.querySelector('.input-row');
   const input    = document.getElementById('ans');
@@ -197,7 +99,7 @@ async function check() {
   const hash     = await sha256(val);
 
   inputRow.classList.remove('error', 'success');
-  void inputRow.offsetWidth; // forza reflow per riavviare animazione
+  void inputRow.offsetWidth;
 
   if (hash === SOLUTION_HASH) {
     inputRow.classList.add('success');
@@ -205,7 +107,6 @@ async function check() {
     msg.textContent = '>> ACCESS_GRANTED... SYSTEM_OVERRIDE';
     input.disabled  = true;
 
-    // suono successo
     try {
       const ctx  = new AudioContext();
       const osc  = ctx.createOscillator();
@@ -220,14 +121,11 @@ async function check() {
     } catch(e) {}
 
     unlockPiece(PIECE_NUMBER);
-
     setTimeout(() => document.body.classList.add('collapsing'), 300);
-
     setTimeout(() => {
       document.getElementById('main-ui').style.display = 'none';
       document.getElementById('success').style.display = 'flex';
       document.body.classList.remove('collapsing');
-
       setTimeout(() => {
         typeWriter(SUCCESS_TEXT, "typewriter", 250);
         setTimeout(() => document.getElementById('piece-notice').classList.add('visible'), 1000);
@@ -242,12 +140,11 @@ async function check() {
     msg.textContent = '>> ERROR: UNAUTHORIZED_BREACH_DETECTED';
 
     _failCount++;
-    applyDegrade(_failCount);
+    if (_failCount >= 10) {
+      _failCount = 0;
+      showWarning();
+    }
 
-    // warning a 10
-    if (_failCount === 10) showWarning();
-
-    // suono errore
     try {
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
@@ -264,10 +161,7 @@ async function check() {
   }
 }
 
-/* ── Decode animation ──
-   Decodifica carattere per carattere da cipher → plain.
-   Salta i non-lettere istantaneamente.
-   Chiama questa funzione dall'IIFE specifica di ogni enigma. */
+/* ── Decode animation ── */
 function runDecode(cipher, plain, selector, charDelay = 40, initialDelay = 1000) {
   const block = document.querySelector(selector);
   if (!block) return;
@@ -280,7 +174,7 @@ function runDecode(cipher, plain, selector, charDelay = 40, initialDelay = 1000)
       block.appendChild(document.createElement('br'));
     } else {
       const span = document.createElement('span');
-      span.className  = 'char';
+      span.className   = 'char';
       span.textContent = cipher[i];
       block.appendChild(span);
       spans.push({
@@ -291,20 +185,17 @@ function runDecode(cipher, plain, selector, charDelay = 40, initialDelay = 1000)
     }
   }
 
-  // cursore alla fine
   const cur = document.createElement('span');
   cur.className = 'cursor';
   block.appendChild(cur);
 
   let i = 0;
   function decodeNext() {
-    // salta non-lettere subito
     while (i < spans.length && !spans[i].isLetter) {
       spans[i].span.classList.add('decoded');
       i++;
     }
     if (i >= spans.length) return;
-
     const { span, target } = spans[i];
     span.classList.add('decoding');
     span.textContent = target;
@@ -369,14 +260,12 @@ function runBootlog(onComplete) {
 
   const interval = setInterval(() => {
     progress += Math.random() * 3 + 1;
-
     if (progress >= 100) {
       progress = 100;
       updateBar();
       statusEl.textContent = 'COMPLETE';
       addLogLine();
       clearInterval(interval);
-
       setTimeout(() => {
         bootlog.classList.add('hidden');
         mainUI.classList.add('loaded');
@@ -384,7 +273,6 @@ function runBootlog(onComplete) {
       }, 800);
       return;
     }
-
     updateBar();
     if (Math.random() > 0.6) addLogLine();
     if (Math.random() > 0.7) updateStatus();
