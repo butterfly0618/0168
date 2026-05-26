@@ -2,11 +2,11 @@
 
 /* ── Variabili ── */
 :root {
-  --primary: #c8b97a;
-  --dim:     #333024;
-  --dim2:    #4a4530;
+  --primary: #d4c47a;
+  --dim:     #d4c47a;
+  --dim2:    #7a7050;
   --bg:      #050505;
-  --glow:    rgba(200, 185, 122, 0.15);
+  --glow:    rgba(212, 196, 122, 0.2);
 }
 
 /* ── Reset ── */
