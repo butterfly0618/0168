@@ -286,3 +286,16 @@ function runBootlog(onComplete) {
     if (Math.random() > 0.7) updateStatus();
   }, 80);
 }
+
+/* ── Google Analytics ── */
+(function() {
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=G-QS1W8VMK4Y';
+  document.head.appendChild(s);
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  window.gtag = gtag;
+  gtag('js', new Date());
+  gtag('config', 'G-QS1W8VMK4Y');
+})();
