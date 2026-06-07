@@ -148,6 +148,7 @@
 </div>
 
 <script src="terminal.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
   const PIECE_MESSAGES = {
     1: "FRAGMENT_1 DECRYPTED",
@@ -155,7 +156,16 @@
     3: "FRAGMENT_3 DECRYPTED",
     4: "FRAGMENT_4 DECRYPTED — SIGNAL COMPLETE",
   };
-  const QR_SRC = "assets/finalsolution.png";
+
+  /* ── Link criptato ── */
+  const _e = "58454248316f7b7b263a2738774759574c313424246b31292176755645400c376c600a23250b6b4776620f12120306346d35713a5c17460523733938306f77";
+  const _k = "0168BUTTERFLY";
+  function _dec(h, k) {
+    let r = '';
+    for (let i = 0; i < h.length; i += 2)
+      r += String.fromCharCode(parseInt(h.substr(i,2),16) ^ k.charCodeAt((i/2) % k.length));
+    return r;
+  }
 
   startBootMsgLoop([
     "DECRYPTING_FRAGMENT...", "SIGNAL_PARTIAL...",
@@ -175,25 +185,34 @@
   }, { passive: false });
   shield.addEventListener('touchend', () => clearTimeout(pressTimer));
 
-  /* ── Canvas ── */
+  /* ── Genera QR su canvas temporaneo, poi applica tinta gold ── */
   const canvas = document.getElementById('qr-canvas');
   const ctx    = canvas.getContext('2d');
-  const img    = new Image();
-  img.crossOrigin = 'anonymous';
-  img.src = QR_SRC;
+  let qrCanvas = null;
 
-  let unlockedPieces = [];
-
-  img.onload = () => drawCanvas(unlockedPieces);
+  function buildQR() {
+    const tmp = document.createElement('div');
+    tmp.style.display = 'none';
+    document.body.appendChild(tmp);
+    new QRCode(tmp, {
+      text:         _dec(_e, _k),
+      width:        280,
+      height:       280,
+      colorDark:    '#000000',
+      colorLight:   '#ffffff',
+      correctLevel: QRCode.CorrectLevel.L
+    });
+    // QRCode.js crea un canvas dentro tmp
+    qrCanvas = tmp.querySelector('canvas');
+    drawCanvas(unlockedPieces);
+  }
 
   function drawCanvas(unlocked) {
+    if (!qrCanvas) return;
     const W = 280, H = 280;
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = '#050505';
     ctx.fillRect(0, 0, W, H);
-
-    const iW = img.naturalWidth;
-    const iH = img.naturalHeight;
 
     const quadrants = [
       { piece: 1, sx: 0,   sy: 0,   dx: 0,   dy: 0   },
@@ -204,9 +223,8 @@
 
     quadrants.forEach(({ piece, sx, sy, dx, dy }) => {
       if (!unlocked.includes(piece)) return;
-      ctx.drawImage(img, sx/W*iW, sy/H*iH, iW/2, iH/2, dx, dy, W/2, H/2);
+      ctx.drawImage(qrCanvas, sx, sy, W/2, H/2, dx, dy, W/2, H/2);
 
-      // Tinta gold
       const imageData = ctx.getImageData(dx, dy, W/2, H/2);
       const data = imageData.data;
       for (let i = 0; i < data.length; i += 4) {
@@ -232,6 +250,8 @@
   }
 
   /* ── Sblocca quadrante ── */
+  let unlockedPieces = [];
+
   function unlockQuad(n, animate) {
     const lock = document.querySelector(`.quad-lock[data-q="${n}"]`);
     if (!lock || lock.classList.contains('unlocked')) return;
@@ -266,11 +286,12 @@
 
   /* ── Main ── */
   window.addEventListener('load', () => {
+    buildQR();
     unlockedPieces = getSaved();
     const newPiece = getPieceFromURL();
 
     unlockedPieces.forEach(n => unlockQuad(n, false));
-    if (img.complete) drawCanvas(unlockedPieces);
+    drawCanvas(unlockedPieces);
 
     if (newPiece && !unlockedPieces.includes(newPiece)) {
       setTimeout(() => {
